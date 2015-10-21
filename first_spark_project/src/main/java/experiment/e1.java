@@ -13,7 +13,7 @@ public class e1 {
     public static void main(String[] args){
         String s="12,345,678,890";
         Pattern SPACE = Pattern.compile(",");
-        String[] b=SPACE.split(s);
+        String[] b=s.split(",");//SPACE.split(s);
         StringBuilder c=new StringBuilder();
         for(int i=1;i<b.length-1;i++){
             c.append(b[i]);
