@@ -13,17 +13,17 @@ public class e1 {
     public static void main(String[] args){
         String s="12,345,678,890";
         Pattern SPACE = Pattern.compile(",");
-//        String[] b=qie.split(a);
-//        StringBuffer c=new StringBuffer();
-//        for(int i=1;i<b.length;i++){
-//            c.append(b[i]);
-//            c.append(',');
-//        }
-        List<String> s2= Arrays.asList(SPACE.split(s));
-        String user_id=s2.get(0);
-        ArrayList<String> s3=new ArrayList<String>(s2);
-        s3.remove(0);
-        String d=s2.toString();
-        System.out.println(d);
+        String[] b=SPACE.split(s);
+        StringBuilder c=new StringBuilder();
+        for(int i=1;i<b.length-1;i++){
+            c.append(b[i]);
+            c.append(',');
+        }
+        c.append(b[b.length-1]);
+//        List<String> s2= Arrays.asList(SPACE.split(s));
+//        String user_id=s2.get(0);
+//        ArrayList<String> s3=new ArrayList<String>(s2);
+//        s3.remove(0);
+        System.out.println(b[0]+":"+c.toString());
     }
 }

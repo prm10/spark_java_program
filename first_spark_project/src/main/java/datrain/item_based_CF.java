@@ -36,12 +36,14 @@ public final class item_based_CF {
         JavaPairRDD<String,String> user_behavior=lines.mapToPair(new PairFunction<String, String, String>() {
             @Override
             public Tuple2<String, String> call(String s) {
-                List<String> s2=Arrays.asList(SPACE.split(s));
-                ArrayList<String> s3=new ArrayList<String>(s2);
-                String user_id=s3.get(0);
-                s3.remove(0);
-                String.valueOf(s3);
-                return new Tuple2<String, String>(user_id, s3.toString());
+                String[] b=SPACE.split(s);
+                StringBuilder c=new StringBuilder();
+                for(int i=1;i<b.length-1;i++){
+                    c.append(b[i]);
+                    c.append(',');
+                }
+                c.append(b[b.length - 1]);
+                return new Tuple2<String, String>(b[0], c.toString());
             }
         });
 

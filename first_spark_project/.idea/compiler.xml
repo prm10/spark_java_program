@@ -25,8 +25,8 @@
         <module name="first_spark_project" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel target="1.7">
-      <module name="first_spark_project" target="1.7" />
+    <bytecodeTargetLevel target="1.8">
+      <module name="first_spark_project" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>
