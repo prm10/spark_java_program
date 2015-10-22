@@ -24,6 +24,7 @@ public class e1 {
 //        String user_id=s2.get(0);
 //        ArrayList<String> s3=new ArrayList<String>(s2);
 //        s3.remove(0);
-        System.out.println(b[0]+":"+c.toString());
+        int x=Integer.valueOf("-1");
+        System.out.println(String.valueOf(x));
     }
 }
