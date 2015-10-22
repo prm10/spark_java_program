@@ -2,23 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="19b267b0-61be-4f20-b235-f3551fe0323a" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/main/java/datrain/ItemInfo.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/target/classes/org/apache/spark/examples/JavaPageRank$1.class" afterPath="$PROJECT_DIR$/target/classes/org/apache/spark/examples/JavaPageRank$1.class" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/target/classes/org/apache/spark/examples/JavaPageRank$2.class" afterPath="$PROJECT_DIR$/target/classes/org/apache/spark/examples/JavaPageRank$2.class" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/target/classes/org/apache/spark/examples/JavaPageRank$3.class" afterPath="$PROJECT_DIR$/target/classes/org/apache/spark/examples/JavaPageRank$3.class" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/target/classes/org/apache/spark/examples/JavaPageRank$4.class" afterPath="$PROJECT_DIR$/target/classes/org/apache/spark/examples/JavaPageRank$4.class" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/target/classes/org/apache/spark/examples/JavaPageRank$Sum.class" afterPath="$PROJECT_DIR$/target/classes/org/apache/spark/examples/JavaPageRank$Sum.class" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/target/classes/org/apache/spark/examples/JavaPageRank.class" afterPath="$PROJECT_DIR$/target/classes/org/apache/spark/examples/JavaPageRank.class" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/target/classes/experiment/e1.class" afterPath="$PROJECT_DIR$/target/classes/experiment/e1.class" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/target/classes/datrain/item_based_CF$1.class" afterPath="$PROJECT_DIR$/target/classes/datrain/item_based_CF$1.class" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/target/classes/datrain/item_based_CF$2.class" afterPath="$PROJECT_DIR$/target/classes/datrain/item_based_CF$2.class" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/target/classes/datrain/item_based_CF.class" afterPath="$PROJECT_DIR$/target/classes/datrain/item_based_CF.class" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/compiler.xml" afterPath="$PROJECT_DIR$/.idea/compiler.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/experiment/e1.java" afterPath="$PROJECT_DIR$/src/main/java/experiment/e1.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/first_spark_project.iml" afterPath="$PROJECT_DIR$/first_spark_project.iml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/datrain/item_based_CF.java" afterPath="$PROJECT_DIR$/src/main/java/datrain/item_based_CF.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="first_spark_project.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -45,7 +29,7 @@
         <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/spark/examples/JavaWordCount.java">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="53" column="49" selection-start-line="53" selection-start-column="49" selection-end-line="53" selection-end-column="49" />
+              <caret line="67" column="47" selection-start-line="67" selection-start-column="47" selection-end-line="67" selection-end-column="47" />
               <folding>
                 <element signature="imports" expanded="true" />
                 <element signature="e#1782#1944#0" expanded="true" />
@@ -60,46 +44,47 @@
       <file leaf-file-name="item_based_CF.java" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/main/java/datrain/item_based_CF.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.28549618">
-              <caret line="97" column="50" selection-start-line="97" selection-start-column="50" selection-end-line="97" selection-end-column="50" />
+            <state vertical-scroll-proportion="0.39541984">
+              <caret line="157" column="43" selection-start-line="157" selection-start-column="43" selection-end-line="157" selection-end-column="43" />
               <folding>
                 <element signature="imports" expanded="true" />
-                <element signature="e#1107#1602#0" expanded="true" />
-                <element signature="e#1601#1602#0" expanded="true" />
-                <element signature="e#1705#1883#0" expanded="true" />
-                <element signature="e#1882#1883#0" expanded="true" />
-                <element signature="e#1978#2280#0" expanded="true" />
-                <element signature="e#2279#2280#0" expanded="true" />
-                <element signature="e#2382#2648#0" expanded="true" />
-                <element signature="e#2647#2648#0" expanded="true" />
-                <element signature="e#2677#2990#0" expanded="true" />
-                <element signature="e#2989#2990#0" expanded="true" />
-                <element signature="e#3004#3195#0" expanded="true" />
-                <element signature="e#3194#3195#0" expanded="true" />
-                <element signature="e#3324#5341#0" expanded="true" />
-                <element signature="e#3731#3739#0" expanded="true" />
-                <element signature="e#3822#3860#0" expanded="true" />
-                <element signature="e#4133#4141#0" expanded="true" />
-                <element signature="e#4692#4700#0" expanded="true" />
-                <element signature="e#5000#5008#0" expanded="true" />
-                <element signature="e#5340#5341#0" expanded="true" />
-                <element signature="e#5473#7677#0" expanded="true" />
-                <element signature="e#5826#5834#0" expanded="true" />
-                <element signature="e#5921#5956#0" expanded="true" />
-                <element signature="e#6269#6277#0" expanded="true" />
-                <element signature="e#6916#6924#0" expanded="true" />
-                <element signature="e#7264#7272#0" expanded="true" />
-                <element signature="e#7676#7677#0" expanded="true" />
-                <element signature="e#7826#8620#0" expanded="true" />
-                <element signature="e#8140#8158#0" expanded="true" />
-                <element signature="e#8220#8228#0" expanded="true" />
-                <element signature="e#8619#8620#0" expanded="true" />
-                <element signature="e#8778#9834#0" expanded="true" />
-                <element signature="e#9833#9834#0" expanded="true" />
-                <element signature="e#9951#10918#0" expanded="true" />
-                <element signature="e#10406#10423#0" expanded="true" />
-                <element signature="e#10917#10918#0" expanded="true" />
+                <element signature="e#1162#1671#0" expanded="true" />
+                <element signature="e#1670#1671#0" expanded="true" />
+                <element signature="e#1774#2076#0" expanded="true" />
+                <element signature="e#2075#2076#0" expanded="true" />
+                <element signature="e#2178#2444#0" expanded="true" />
+                <element signature="e#2443#2444#0" expanded="true" />
+                <element signature="e#2473#2800#0" expanded="true" />
+                <element signature="e#2799#2800#0" expanded="true" />
+                <element signature="e#2814#3005#0" expanded="true" />
+                <element signature="e#3004#3005#0" expanded="true" />
+                <element signature="e#3132#3312#0" expanded="true" />
+                <element signature="e#3311#3312#0" expanded="true" />
+                <element signature="e#3322#4532#0" expanded="true" />
+                <element signature="e#3653#3661#0" expanded="true" />
+                <element signature="e#3744#3782#0" expanded="true" />
+                <element signature="e#4531#4532#0" expanded="true" />
+                <element signature="e#4681#5072#0" expanded="true" />
+                <element signature="e#5071#5072#0" expanded="true" />
+                <element signature="e#5086#5277#0" expanded="true" />
+                <element signature="e#5276#5277#0" expanded="true" />
+                <element signature="e#5289#5680#0" expanded="true" />
+                <element signature="e#5679#5680#0" expanded="true" />
+                <element signature="e#5709#6258#0" expanded="true" />
+                <element signature="e#6257#6258#0" expanded="true" />
+                <element signature="e#6287#6836#0" expanded="true" />
+                <element signature="e#6835#6836#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Min_Heap.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/datrain/Min_Heap.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0">
+              <caret line="117" column="38" selection-start-line="111" selection-start-column="7" selection-end-line="117" selection-end-column="38" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -118,7 +103,7 @@
         <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/spark/examples/JavaPageRank.java">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="94" column="28" selection-start-line="94" selection-start-column="18" selection-end-line="94" selection-end-column="28" />
+              <caret line="88" column="32" selection-start-line="88" selection-start-column="24" selection-end-line="88" selection-end-column="32" />
               <folding />
             </state>
           </provider>
@@ -190,6 +175,7 @@
         <option value="$PROJECT_DIR$/src/main/java/datrain/item_info.java" />
         <option value="$PROJECT_DIR$/src/main/java/experiment/e1.java" />
         <option value="$PROJECT_DIR$/src/main/java/datrain/ItemInfo.java" />
+        <option value="$PROJECT_DIR$/src/main/java/datrain/Min_Heap.java" />
         <option value="$PROJECT_DIR$/src/main/java/datrain/item_based_CF.java" />
       </list>
     </option>
@@ -443,7 +429,7 @@
       <recent name="E:\github\spark_java_program\first_spark_project\src\main\java" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.e1">
+  <component name="RunManager" selected="Application.Min_Heap">
     <configuration default="false" name="JavaWordCount" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
         <pattern>
@@ -492,6 +478,26 @@
         </pattern>
       </extension>
       <option name="MAIN_CLASS_NAME" value="datrain.item_based_CF" />
+      <option name="VM_PARAMETERS" />
+      <option name="PROGRAM_PARAMETERS" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
+      <option name="ENABLE_SWING_INSPECTOR" value="false" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <module name="first_spark_project" />
+      <envs />
+      <method />
+    </configuration>
+    <configuration default="false" name="Min_Heap" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
+        <pattern>
+          <option name="PATTERN" value="datrain.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="MAIN_CLASS_NAME" value="datrain.Min_Heap" />
       <option name="VM_PARAMETERS" />
       <option name="PROGRAM_PARAMETERS" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
@@ -673,16 +679,18 @@
       <listeners />
       <method />
     </configuration>
-    <list size="3">
+    <list size="4">
       <item index="0" class="java.lang.String" itemvalue="Application.JavaWordCount" />
       <item index="1" class="java.lang.String" itemvalue="Application.e1" />
       <item index="2" class="java.lang.String" itemvalue="Application.item_based_CF" />
+      <item index="3" class="java.lang.String" itemvalue="Application.Min_Heap" />
     </list>
     <recent_temporary>
-      <list size="3">
-        <item index="0" class="java.lang.String" itemvalue="Application.e1" />
-        <item index="1" class="java.lang.String" itemvalue="Application.item_based_CF" />
-        <item index="2" class="java.lang.String" itemvalue="Application.JavaWordCount" />
+      <list size="4">
+        <item index="0" class="java.lang.String" itemvalue="Application.Min_Heap" />
+        <item index="1" class="java.lang.String" itemvalue="Application.e1" />
+        <item index="2" class="java.lang.String" itemvalue="Application.item_based_CF" />
+        <item index="3" class="java.lang.String" itemvalue="Application.JavaWordCount" />
       </list>
     </recent_temporary>
   </component>
@@ -775,41 +783,32 @@
           <caret line="101" column="36" selection-start-line="101" selection-start-column="27" selection-end-line="101" selection-end-column="36" />
           <folding>
             <element signature="imports" expanded="true" />
-            <element signature="e#1107#1602#0" expanded="true" />
-            <element signature="e#1601#1602#0" expanded="true" />
-            <element signature="e#1705#1883#0" expanded="true" />
-            <element signature="e#1882#1883#0" expanded="true" />
-            <element signature="e#1978#2280#0" expanded="true" />
-            <element signature="e#2279#2280#0" expanded="true" />
-            <element signature="e#2382#2648#0" expanded="true" />
-            <element signature="e#2647#2648#0" expanded="true" />
-            <element signature="e#2677#2990#0" expanded="true" />
-            <element signature="e#2989#2990#0" expanded="true" />
-            <element signature="e#3004#3195#0" expanded="true" />
-            <element signature="e#3194#3195#0" expanded="true" />
-            <element signature="e#3324#5341#0" expanded="true" />
-            <element signature="e#3731#3739#0" expanded="true" />
-            <element signature="e#3822#3860#0" expanded="true" />
-            <element signature="e#4133#4141#0" expanded="true" />
-            <element signature="e#4692#4700#0" expanded="true" />
-            <element signature="e#5000#5008#0" expanded="true" />
-            <element signature="e#5340#5341#0" expanded="true" />
-            <element signature="e#5473#7677#0" expanded="true" />
-            <element signature="e#5826#5834#0" expanded="true" />
-            <element signature="e#5921#5956#0" expanded="true" />
-            <element signature="e#6269#6277#0" expanded="true" />
-            <element signature="e#6916#6924#0" expanded="true" />
-            <element signature="e#7264#7272#0" expanded="true" />
-            <element signature="e#7676#7677#0" expanded="true" />
-            <element signature="e#7826#8620#0" expanded="true" />
-            <element signature="e#8140#8158#0" expanded="true" />
-            <element signature="e#8220#8228#0" expanded="true" />
-            <element signature="e#8619#8620#0" expanded="true" />
-            <element signature="e#8778#9834#0" expanded="true" />
-            <element signature="e#9833#9834#0" expanded="true" />
-            <element signature="e#9951#10918#0" expanded="true" />
-            <element signature="e#10406#10423#0" expanded="true" />
-            <element signature="e#10917#10918#0" expanded="true" />
+            <element signature="e#1162#1671#0" expanded="true" />
+            <element signature="e#1670#1671#0" expanded="true" />
+            <element signature="e#1774#2076#0" expanded="true" />
+            <element signature="e#2075#2076#0" expanded="true" />
+            <element signature="e#2178#2444#0" expanded="true" />
+            <element signature="e#2443#2444#0" expanded="true" />
+            <element signature="e#2473#2800#0" expanded="true" />
+            <element signature="e#2799#2800#0" expanded="true" />
+            <element signature="e#2814#3005#0" expanded="true" />
+            <element signature="e#3004#3005#0" expanded="true" />
+            <element signature="e#3132#3312#0" expanded="true" />
+            <element signature="e#3311#3312#0" expanded="true" />
+            <element signature="e#3322#4532#0" expanded="true" />
+            <element signature="e#3653#3661#0" expanded="true" />
+            <element signature="e#3744#3782#0" expanded="true" />
+            <element signature="e#4531#4532#0" expanded="true" />
+            <element signature="e#4681#5072#0" expanded="true" />
+            <element signature="e#5071#5072#0" expanded="true" />
+            <element signature="e#5086#5277#0" expanded="true" />
+            <element signature="e#5276#5277#0" expanded="true" />
+            <element signature="e#5289#5680#0" expanded="true" />
+            <element signature="e#5679#5680#0" expanded="true" />
+            <element signature="e#5709#6258#0" expanded="true" />
+            <element signature="e#6257#6258#0" expanded="true" />
+            <element signature="e#6287#6836#0" expanded="true" />
+            <element signature="e#6835#6836#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -876,41 +875,32 @@
           <caret line="42" column="35" selection-start-line="42" selection-start-column="35" selection-end-line="42" selection-end-column="35" />
           <folding>
             <element signature="imports" expanded="true" />
-            <element signature="e#1107#1602#0" expanded="true" />
-            <element signature="e#1601#1602#0" expanded="true" />
-            <element signature="e#1705#1883#0" expanded="true" />
-            <element signature="e#1882#1883#0" expanded="true" />
-            <element signature="e#1978#2280#0" expanded="true" />
-            <element signature="e#2279#2280#0" expanded="true" />
-            <element signature="e#2382#2648#0" expanded="true" />
-            <element signature="e#2647#2648#0" expanded="true" />
-            <element signature="e#2677#2990#0" expanded="true" />
-            <element signature="e#2989#2990#0" expanded="true" />
-            <element signature="e#3004#3195#0" expanded="true" />
-            <element signature="e#3194#3195#0" expanded="true" />
-            <element signature="e#3324#5341#0" expanded="true" />
-            <element signature="e#3731#3739#0" expanded="true" />
-            <element signature="e#3822#3860#0" expanded="true" />
-            <element signature="e#4133#4141#0" expanded="true" />
-            <element signature="e#4692#4700#0" expanded="true" />
-            <element signature="e#5000#5008#0" expanded="true" />
-            <element signature="e#5340#5341#0" expanded="true" />
-            <element signature="e#5473#7677#0" expanded="true" />
-            <element signature="e#5826#5834#0" expanded="true" />
-            <element signature="e#5921#5956#0" expanded="true" />
-            <element signature="e#6269#6277#0" expanded="true" />
-            <element signature="e#6916#6924#0" expanded="true" />
-            <element signature="e#7264#7272#0" expanded="true" />
-            <element signature="e#7676#7677#0" expanded="true" />
-            <element signature="e#7826#8620#0" expanded="true" />
-            <element signature="e#8140#8158#0" expanded="true" />
-            <element signature="e#8220#8228#0" expanded="true" />
-            <element signature="e#8619#8620#0" expanded="true" />
-            <element signature="e#8778#9834#0" expanded="true" />
-            <element signature="e#9833#9834#0" expanded="true" />
-            <element signature="e#9951#10918#0" expanded="true" />
-            <element signature="e#10406#10423#0" expanded="true" />
-            <element signature="e#10917#10918#0" expanded="true" />
+            <element signature="e#1162#1671#0" expanded="true" />
+            <element signature="e#1670#1671#0" expanded="true" />
+            <element signature="e#1774#2076#0" expanded="true" />
+            <element signature="e#2075#2076#0" expanded="true" />
+            <element signature="e#2178#2444#0" expanded="true" />
+            <element signature="e#2443#2444#0" expanded="true" />
+            <element signature="e#2473#2800#0" expanded="true" />
+            <element signature="e#2799#2800#0" expanded="true" />
+            <element signature="e#2814#3005#0" expanded="true" />
+            <element signature="e#3004#3005#0" expanded="true" />
+            <element signature="e#3132#3312#0" expanded="true" />
+            <element signature="e#3311#3312#0" expanded="true" />
+            <element signature="e#3322#4532#0" expanded="true" />
+            <element signature="e#3653#3661#0" expanded="true" />
+            <element signature="e#3744#3782#0" expanded="true" />
+            <element signature="e#4531#4532#0" expanded="true" />
+            <element signature="e#4681#5072#0" expanded="true" />
+            <element signature="e#5071#5072#0" expanded="true" />
+            <element signature="e#5086#5277#0" expanded="true" />
+            <element signature="e#5276#5277#0" expanded="true" />
+            <element signature="e#5289#5680#0" expanded="true" />
+            <element signature="e#5679#5680#0" expanded="true" />
+            <element signature="e#5709#6258#0" expanded="true" />
+            <element signature="e#6257#6258#0" expanded="true" />
+            <element signature="e#6287#6836#0" expanded="true" />
+            <element signature="e#6835#6836#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1039,20 +1029,26 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/spark/examples/JavaPageRank.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="94" column="28" selection-start-line="94" selection-start-column="18" selection-end-line="94" selection-end-column="28" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/experiment/e1.java">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="26" column="30" selection-start-line="26" selection-start-column="30" selection-end-line="26" selection-end-column="30" />
           <folding>
             <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/spark/examples/JavaWordCount.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="67" column="47" selection-start-line="67" selection-start-column="47" selection-end-line="67" selection-end-column="47" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#1782#1944#0" expanded="true" />
+            <element signature="e#1943#1944#0" expanded="true" />
+            <element signature="e#2246#2396#0" expanded="true" />
+            <element signature="e#2395#2396#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1065,61 +1061,54 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/spark/examples/JavaWordCount.java">
+    <entry file="file://$PROJECT_DIR$/src/main/java/org/apache/spark/examples/JavaPageRank.java">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="53" column="49" selection-start-line="53" selection-start-column="49" selection-end-line="53" selection-end-column="49" />
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#1782#1944#0" expanded="true" />
-            <element signature="e#1943#1944#0" expanded="true" />
-            <element signature="e#2246#2396#0" expanded="true" />
-            <element signature="e#2395#2396#0" expanded="true" />
-          </folding>
+          <caret line="88" column="32" selection-start-line="88" selection-start-column="24" selection-end-line="88" selection-end-column="32" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/datrain/Min_Heap.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="117" column="38" selection-start-line="111" selection-start-column="7" selection-end-line="117" selection-end-column="38" />
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/datrain/item_based_CF.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.28549618">
-          <caret line="97" column="50" selection-start-line="97" selection-start-column="50" selection-end-line="97" selection-end-column="50" />
+        <state vertical-scroll-proportion="0.39541984">
+          <caret line="157" column="43" selection-start-line="157" selection-start-column="43" selection-end-line="157" selection-end-column="43" />
           <folding>
             <element signature="imports" expanded="true" />
-            <element signature="e#1107#1602#0" expanded="true" />
-            <element signature="e#1601#1602#0" expanded="true" />
-            <element signature="e#1705#1883#0" expanded="true" />
-            <element signature="e#1882#1883#0" expanded="true" />
-            <element signature="e#1978#2280#0" expanded="true" />
-            <element signature="e#2279#2280#0" expanded="true" />
-            <element signature="e#2382#2648#0" expanded="true" />
-            <element signature="e#2647#2648#0" expanded="true" />
-            <element signature="e#2677#2990#0" expanded="true" />
-            <element signature="e#2989#2990#0" expanded="true" />
-            <element signature="e#3004#3195#0" expanded="true" />
-            <element signature="e#3194#3195#0" expanded="true" />
-            <element signature="e#3324#5341#0" expanded="true" />
-            <element signature="e#3731#3739#0" expanded="true" />
-            <element signature="e#3822#3860#0" expanded="true" />
-            <element signature="e#4133#4141#0" expanded="true" />
-            <element signature="e#4692#4700#0" expanded="true" />
-            <element signature="e#5000#5008#0" expanded="true" />
-            <element signature="e#5340#5341#0" expanded="true" />
-            <element signature="e#5473#7677#0" expanded="true" />
-            <element signature="e#5826#5834#0" expanded="true" />
-            <element signature="e#5921#5956#0" expanded="true" />
-            <element signature="e#6269#6277#0" expanded="true" />
-            <element signature="e#6916#6924#0" expanded="true" />
-            <element signature="e#7264#7272#0" expanded="true" />
-            <element signature="e#7676#7677#0" expanded="true" />
-            <element signature="e#7826#8620#0" expanded="true" />
-            <element signature="e#8140#8158#0" expanded="true" />
-            <element signature="e#8220#8228#0" expanded="true" />
-            <element signature="e#8619#8620#0" expanded="true" />
-            <element signature="e#8778#9834#0" expanded="true" />
-            <element signature="e#9833#9834#0" expanded="true" />
-            <element signature="e#9951#10918#0" expanded="true" />
-            <element signature="e#10406#10423#0" expanded="true" />
-            <element signature="e#10917#10918#0" expanded="true" />
+            <element signature="e#1162#1671#0" expanded="true" />
+            <element signature="e#1670#1671#0" expanded="true" />
+            <element signature="e#1774#2076#0" expanded="true" />
+            <element signature="e#2075#2076#0" expanded="true" />
+            <element signature="e#2178#2444#0" expanded="true" />
+            <element signature="e#2443#2444#0" expanded="true" />
+            <element signature="e#2473#2800#0" expanded="true" />
+            <element signature="e#2799#2800#0" expanded="true" />
+            <element signature="e#2814#3005#0" expanded="true" />
+            <element signature="e#3004#3005#0" expanded="true" />
+            <element signature="e#3132#3312#0" expanded="true" />
+            <element signature="e#3311#3312#0" expanded="true" />
+            <element signature="e#3322#4532#0" expanded="true" />
+            <element signature="e#3653#3661#0" expanded="true" />
+            <element signature="e#3744#3782#0" expanded="true" />
+            <element signature="e#4531#4532#0" expanded="true" />
+            <element signature="e#4681#5072#0" expanded="true" />
+            <element signature="e#5071#5072#0" expanded="true" />
+            <element signature="e#5086#5277#0" expanded="true" />
+            <element signature="e#5276#5277#0" expanded="true" />
+            <element signature="e#5289#5680#0" expanded="true" />
+            <element signature="e#5679#5680#0" expanded="true" />
+            <element signature="e#5709#6258#0" expanded="true" />
+            <element signature="e#6257#6258#0" expanded="true" />
+            <element signature="e#6287#6836#0" expanded="true" />
+            <element signature="e#6835#6836#0" expanded="true" />
           </folding>
         </state>
       </provider>

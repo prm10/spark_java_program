@@ -31,29 +31,22 @@ public final class item_based_CF {
         SparkConf sparkConf = new SparkConf().setAppName("item_based_CF");
         JavaSparkContext ctx = new JavaSparkContext(sparkConf);
         JavaRDD<String> lines = ctx.textFile(args[0], 1);
+//        JavaRDD<String> x=ctx.parallelize(lines);
 
         //一次用户行为
-        JavaPairRDD<String,String> user_behavior=lines.mapToPair(new PairFunction<String, String, String>() {
+        JavaPairRDD<String, String> user_behavior = lines.mapToPair(new PairFunction<String, String, String>() {
             @Override
             public Tuple2<String, String> call(String s) {
-                String[] b=SPACE.split(s);
-                StringBuilder c=new StringBuilder();
-                for(int i=1;i<b.length-1;i++){
+                String[] b = SPACE.split(s);
+                StringBuilder c = new StringBuilder();
+                for (int i = 1; i < b.length - 1; i++) {
                     c.append(b[i]);
                     c.append(',');
                 }
                 c.append(b[b.length - 1]);
                 return new Tuple2<String, String>(b[0], c.toString());
             }
-        });
-
-        //记录每个user的行为列表
-        JavaPairRDD<String, String> user_items = user_behavior.reduceByKey(new Function2<String, String, String>() {
-            @Override
-            public String call(String s1, String s2) {
-                return s1 +";"+ s2;
-            }
-        });
+        }).cache();
 
         //每个user的行为次数
         JavaPairRDD<String,Long> user_times= user_behavior.mapToPair(new PairFunction<Tuple2<String, String>, String, Long>() {
@@ -74,154 +67,97 @@ public final class item_based_CF {
         }).join(user_times).mapToPair(new PairFunction<Tuple2<String, Tuple2<String, Long>>, String, Double>() {
             @Override
             public Tuple2<String, Double> call(Tuple2<String, Tuple2<String, Long>> s) throws Exception {
-                return new Tuple2<String, Double>(s._1(),1.0/s._2()._2());//item,count
+                return new Tuple2<String, Double>(s._1(),1.0/Math.log(1 + s._2()._2()));//item,count
             }
         }).reduceByKey(new Function2<Double, Double, Double>() {
             @Override
             public Double call(Double i1, Double i2) throws Exception {
                 return i1 + i2;
             }
-        });
+        }).cache();
 
-        //生成item1：item2,count
-        JavaRDD<Tuple2<String,Tuple2<String,Double>>> i1i2=user_items.join(user_times).flatMap(new FlatMapFunction<Tuple2<String, Tuple2<String, Long>>, Tuple2<String, Tuple2<String, Double>>>() {
+        //生成item1：item2,score
+        JavaRDD<Tuple2<String,Tuple2<String,Double>>> i1i2=user_behavior.reduceByKey(new Function2<String, String, String>() {
             @Override
-            public Iterable<Tuple2<String, Tuple2<String, Double>>> call(Tuple2<String, Tuple2<String, Long>> s) throws Exception {
-                String[] items=s._2()._1().split(";");
-                long user_times=s._2()._2();
+            public String call(String s1, String s2) {
+                return s1 + ";" + s2;
+            }
+        }).flatMap(new FlatMapFunction<Tuple2<String, String>, Tuple2<String, Tuple2<String, Double>>>() {
+            @Override
+            public Iterable<Tuple2<String, Tuple2<String, Double>>> call(Tuple2<String, String> ui) throws Exception {
+                String[] items=ui._2().split(";");
                 HashSet<String> itemSet=new HashSet<String>();
                 List<Tuple2<String,Tuple2<String,Double>>> output=new ArrayList<Tuple2<String,Tuple2<String,Double>>>();
                 for(int i1=0;i1<items.length;i1++){
                     String[] item1=items[i1].split(",");
-                    if(!itemSet.contains(item1[0])){
-                        itemSet.add(item1[0]);
-                        ArrayList<String> info=new ArrayList<String>();
-                        info.add("-1");
-                        info.add(String.valueOf(items.length));
-                        info.add("");
-                        output.add(new Tuple2<String,ArrayList<String>>(item1[0],info));
-                    }
                     for(int i2=i1+1;i2<items.length;i2++){
                         String[] item2=items[i2].split(",");
-                        if(item2.equals(item1)){
+                        if(item2[0].equals(item1[0])){
                             continue;
                         }
-                        ArrayList<String> info1=new ArrayList<String>();
-                        info1.add(item2[0]);
-                        info1.add("1");
-                        info1.add(items[i1]+";"+items[i2]);
-                        output.add(new Tuple2<String,ArrayList<String>>(item1[0],info1));
-                        ArrayList<String> info2=new ArrayList<String>();
-                        info2.add(item1[0]);
-                        info2.add("1");
-                        info2.add(items[i2]+";"+items[i1]);
-                        output.add(new Tuple2<String,ArrayList<String>>(item2[0],info2));
+                        output.add(new Tuple2<String,Tuple2<String,Double>>(item1[0],new Tuple2<String, Double>(item2[0],1/Math.log(1+items.length))));
+                        output.add(new Tuple2<String,Tuple2<String,Double>>(item2[0],new Tuple2<String, Double>(item1[0],1/Math.log(1+items.length))));
                     }
                 }
                 return output;
             }
         });
+        user_behavior.unpersist();
 
-        //生成item1：item2,state,info
-        JavaRDD<Tuple2<String,ArrayList<String>>> item12=user_items.flatMap(
-                new FlatMapFunction<Tuple2<String, String>, Tuple2<String, ArrayList<String>>>() {
-                    @Override
-                    public Iterable<Tuple2<String, ArrayList<String>>> call(Tuple2<String, String> ui) throws Exception {
-                        String[] items=ui._2().split(";");
-                        HashSet<String> itemSet=new HashSet<String>();
-                        List<Tuple2<String,ArrayList<String>>> output=new ArrayList<Tuple2<String, ArrayList<String>>>();
-                        for(int i1=0;i1<items.length;i1++){
-                            String[] item1=items[i1].split(",");
-                            if(!itemSet.contains(item1[0])){
-                                itemSet.add(item1[0]);
-                                ArrayList<String> info=new ArrayList<String>();
-                                info.add("-1");
-                                info.add(String.valueOf(items.length));
-                                info.add("");
-                                output.add(new Tuple2<String,ArrayList<String>>(item1[0],info));
-                            }
-                            for(int i2=i1+1;i2<items.length;i2++){
-                                String[] item2=items[i2].split(",");
-                                if(item2.equals(item1)){
-                                    continue;
-                                }
-                                ArrayList<String> info1=new ArrayList<String>();
-                                info1.add(item2[0]);
-                                info1.add("1");
-                                info1.add(items[i1]+";"+items[i2]);
-                                output.add(new Tuple2<String,ArrayList<String>>(item1[0],info1));
-                                ArrayList<String> info2=new ArrayList<String>();
-                                info2.add(item1[0]);
-                                info2.add("1");
-                                info2.add(items[i2]+";"+items[i1]);
-                                output.add(new Tuple2<String,ArrayList<String>>(item2[0],info2));
-                            }
-                        }
-                        return output;
-                    }
-                }
-        );
-        //转换成键值对item1：item2,count,info
-        JavaPairRDD<String,HashMap<String,ItemInfo>> item_items=item12.mapToPair(
-                new PairFunction<Tuple2<String, ArrayList<String>>, String, HashMap<String,ItemInfo>>() {
-                    @Override
-                    public Tuple2<String, HashMap<String,ItemInfo>> call(Tuple2<String, ArrayList<String>> i12) throws Exception {
-                        HashMap<String,ItemInfo> x1=new HashMap<String, ItemInfo>();
-                        ArrayList<String> x2=new ArrayList<String>();
-                        x2.add(i12._2().get(2));//info
-                        long state=Long.parseLong(i12._2().get(1));//count
-                        ItemInfo x3=new ItemInfo(i12._2().get(0),state,x2);
-                        x1.put(i12._2().get(0),x3);
-                        return new Tuple2<String, HashMap<String, ItemInfo>>(i12._1(),x1);
-                    }
-                }
-        );
+        //收集结果，并除以item热度
+        JavaPairRDD<String,Iterable<Tuple2<String,Double>>>  i1i2pair=i1i2.mapToPair(new PairFunction<Tuple2<String, Tuple2<String, Double>>, Tuple2<String, String>, Double>() {
+            @Override
+            public Tuple2<Tuple2<String, String>, Double> call(Tuple2<String, Tuple2<String, Double>> s) throws Exception {
+                return new Tuple2<Tuple2<String, String>, Double>(new Tuple2<String, String>(s._1(), s._2()._1()), s._2()._2());
+            }
+        }).reduceByKey(new Function2<Double, Double, Double>() {
+            @Override
+            public Double call(Double s1, Double s2) throws Exception {
+                return s1 + s2;
+            }
+        }).mapToPair(new PairFunction<Tuple2<Tuple2<String, String>, Double>, String, Tuple2<String, Double>>() {
+            @Override
+            public Tuple2<String, Tuple2<String, Double>> call(Tuple2<Tuple2<String, String>, Double> s) throws Exception {
+                return new Tuple2<String, Tuple2<String, Double>>(s._1()._1(), new Tuple2<String, Double>(s._1()._2(), s._2()));
+            }
+        }).join(item_times).mapToPair(new PairFunction<Tuple2<String, Tuple2<Tuple2<String, Double>, Double>>, String, Tuple2<String, Double>>() {
+            @Override
+            public Tuple2<String, Tuple2<String, Double>> call(Tuple2<String, Tuple2<Tuple2<String, Double>, Double>> s) throws Exception {
+                String i1 = s._1();
+                String i2 = s._2()._1()._1();
+                double score = s._2()._1()._2() / s._2()._2();
+                return new Tuple2<String, Tuple2<String, Double>>(i2, new Tuple2<String, Double>(i1, score));
+            }
+        }).join(item_times).mapToPair(new PairFunction<Tuple2<String, Tuple2<Tuple2<String, Double>, Double>>, String, Tuple2<String, Double>>() {
+            @Override
+            public Tuple2<String, Tuple2<String, Double>> call(Tuple2<String, Tuple2<Tuple2<String, Double>, Double>> s) throws Exception {
+                String i1 = s._1();
+                String i2 = s._2()._1()._1();
+                double score = s._2()._1()._2() / s._2()._2();
+                return new Tuple2<String, Tuple2<String, Double>>(i2, new Tuple2<String, Double>(i1, score));
+            }
+        }).groupByKey();
 
-        //Reduce item1：item2,count,info
-        JavaPairRDD<String,HashMap<String,ItemInfo>> item_items2=item_items.reduceByKey(
-                new Function2<HashMap<String,ItemInfo>, HashMap<String,ItemInfo>, HashMap<String,ItemInfo>>() {
-                    @Override
-                    public HashMap<String,ItemInfo> call(HashMap<String,ItemInfo> v1, HashMap<String,ItemInfo> v2) throws Exception {
-                        Iterator iter=v2.entrySet().iterator();
-                        while(iter.hasNext()){
-                            Map.Entry<String,ItemInfo> entry=(Map.Entry<String,ItemInfo>) iter.next();
-                            String item2=entry.getKey();
-                            ItemInfo info=entry.getValue();
-                            if(v1.containsKey(item2)){
-                                long n=v1.get(item2).count;
-                                v1.put(item2,new ItemInfo(item2,n+info.count,info.info));
-                            }
-                            else{
-                                v1.put(item2,new ItemInfo(info));
-                            }
-                        }
-                        return v1;
-                    }
-                }
-        );
-
-        JavaPairRDD<String,HashMap<String,ItemInfo>> item_items3=item_items2.mapToPair(
-                new PairFunction<Tuple2<String, HashMap<String, ItemInfo>>, String, HashMap<String, ItemInfo>>() {
-                    @Override
-                    public Tuple2<String, HashMap<String, ItemInfo>> call(Tuple2<String, HashMap<String, ItemInfo>> data) throws Exception {
-                        String item1=data._1();
-                        HashMap<String,ItemInfo> item2info=data._2();
-                        HashMap<String,ItemInfo> output=new HashMap<String,ItemInfo>();
-                        long n=item2info.get("-1").count;
-                        Iterator iter=item2info.entrySet().iterator();
-                        while(iter.hasNext()) {
-                            Map.Entry<String, ItemInfo> entry = (Map.Entry<String, ItemInfo>) iter.next();
-                            ItemInfo x=entry.getValue();
-                            output.put(entry.getKey(),new ItemInfo(x.item2,x.count))
-                        }
-                    }
-                }
-        );
-
-//        List<Tuple2<String, String>> output = user_items.collect();
-//        for (Tuple2<?,?> tuple : output) {
-//            System.out.println(tuple._1() + ": " + tuple._2());
-//        }
+        //对结果进行排序并输出
+        List<Tuple2<String,Iterable<Tuple2<String,Double>>>> output = i1i2pair.collect();
+        for (Tuple2<String,Iterable<Tuple2<String,Double>>> tuple : output) {
+            String item1=tuple._1();
+            Min_Heap heap = new Min_Heap(100);
+            Iterator<Tuple2<String,Double>> iter=tuple._2().iterator();
+            while(iter.hasNext()){
+                Tuple2<String,Double> tu = iter.next();
+                heap.add(tu._1(),tu._2());
+            }
+            heap.sort();
+            Min_Heap.kv item_entry = heap.result[0];
+            String item_list = item_entry.key + ":" + item_entry.value;//rec_item_id,score
+            for (int i = 1; i < heap.size; i++) {
+                item_entry = heap.result[i];
+                item_list += ";" + item_entry.key + ":" + item_entry.value;
+            }
+            System.out.println("["+item1+"]");
+            System.out.println(item_list);
+        }
         ctx.stop();
     }
 }
