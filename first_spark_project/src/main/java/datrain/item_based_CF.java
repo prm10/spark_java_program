@@ -54,7 +54,17 @@ public final class item_based_CF {
                 long n = s._2().split(";").length;
                 return new Tuple2<String, Long>(s._1(), n);
             }
+        }).reduceByKey(new Function2<Long, Long, Long>() {
+            @Override
+            public Long call(Long l1, Long l2) throws Exception {
+                return l1+l2;
+            }
         });
+
+//        List<Tuple2<String,Long>> x=user_times.collect();
+//        for(Tuple2<String,Long> x1:x){
+//            System.out.println("用户"+x1._1+"长度:"+x1._2);
+//        }
 
         //考虑热门user打压后，每个item对应的行为次数
         JavaPairRDD<String, Double> item_times = lines.mapToPair(new PairFunction<String, String, String>() {
@@ -66,7 +76,7 @@ public final class item_based_CF {
         }).join(user_times).mapToPair(new PairFunction<Tuple2<String, Tuple2<String, Long>>, String, Double>() {
             @Override
             public Tuple2<String, Double> call(Tuple2<String, Tuple2<String, Long>> s) throws Exception {
-                return new Tuple2<String, Double>(s._1(), 1.0 / Math.log(1 + s._2()._2()));//item,count
+                return new Tuple2<String, Double>(s._2()._1(), 1.0 / Math.log(1 + s._2()._2()));//item,count
             }
         }).reduceByKey(new Function2<Double, Double, Double>() {
             @Override
@@ -74,6 +84,11 @@ public final class item_based_CF {
                 return i1 + i2;
             }
         }).cache();
+
+//        List<Tuple2<String,Double>> y=item_times.collect();
+//        for(Tuple2<String,Double> x1:y){
+//            System.out.println("商品"+x1._1+"长度:"+x1._2);
+//        }
 
         //生成item1：item2,score
         JavaRDD<Tuple2<String, Tuple2<String, Double>>> i1i2 = user_behavior.reduceByKey(new Function2<String, String, String>() {
