@@ -2,12 +2,15 @@
   <library name="Maven: org.apache.spark:spark-core_2.10:1.4.1">
     <CLASSES>
       <root url="jar://$MAVEN_REPOSITORY$/org/apache/spark/spark-core_2.10/1.4.1/spark-core_2.10-1.4.1.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/apache/spark/spark-assembly-1.4.1-hadoop2.6.0.jar!/" />
     </CLASSES>
     <JAVADOC>
       <root url="jar://$MAVEN_REPOSITORY$/org/apache/spark/spark-core_2.10/1.4.1/spark-core_2.10-1.4.1-javadoc.jar!/" />
     </JAVADOC>
     <SOURCES>
       <root url="jar://$MAVEN_REPOSITORY$/org/apache/spark/spark-core_2.10/1.4.1/spark-core_2.10-1.4.1-sources.jar!/" />
+      <root url="jar://$USER_HOME$/Downloads/spark-1.4.1-bin-hadoop2.6/lib/spark-assembly-1.4.1-hadoop2.6.0.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/apache/spark/spark-assembly-1.4.1-hadoop2.6.0.jar!/" />
     </SOURCES>
   </library>
 </component>
