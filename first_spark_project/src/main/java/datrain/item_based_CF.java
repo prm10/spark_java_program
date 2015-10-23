@@ -1,6 +1,5 @@
 package datrain;
 
-import org.apache.spark.api.java.function.Function;
 import scala.Tuple2;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -29,10 +28,11 @@ public final class item_based_CF {
         }
 
         SparkConf sparkConf = new SparkConf().setAppName("item_based_CF");
+        sparkConf.set
         JavaSparkContext ctx = new JavaSparkContext(sparkConf);
         JavaRDD<String> lines = ctx.textFile(args[0], 1);
-        System.out.println("×Ü¹²¶ÁÈë" + lines.count() + "ĞĞÊı¾İ");
-        //Ò»´ÎÓÃ»§ĞĞÎª
+        System.out.println("æ€»å…±è¯»å…¥" + lines.count() + "è¡Œæ•°æ®");
+        //ä¸€æ¬¡ç”¨æˆ·è¡Œä¸º
         JavaPairRDD<String, String> user_behavior = lines.mapToPair(new PairFunction<String, String, String>() {
             @Override
             public Tuple2<String, String> call(String s) {
@@ -47,7 +47,7 @@ public final class item_based_CF {
             }
         }).cache();
 
-        //Ã¿¸öuserµÄĞĞÎª´ÎÊı
+        //æ¯ä¸ªuserçš„è¡Œä¸ºæ¬¡æ•°
         JavaPairRDD<String, Long> user_times = user_behavior.mapToPair(new PairFunction<Tuple2<String, String>, String, Long>() {
             @Override
             public Tuple2<String, Long> call(Tuple2<String, String> s) throws Exception {
@@ -63,10 +63,10 @@ public final class item_based_CF {
 
 //        List<Tuple2<String,Long>> x=user_times.collect();
 //        for(Tuple2<String,Long> x1:x){
-//            System.out.println("ÓÃ»§"+x1._1+"³¤¶È:"+x1._2);
+//            System.out.println("ç”¨æˆ·"+x1._1+"é•¿åº¦:"+x1._2);
 //        }
 
-        //¿¼ÂÇÈÈÃÅuser´òÑ¹ºó£¬Ã¿¸öitem¶ÔÓ¦µÄĞĞÎª´ÎÊı
+        //è€ƒè™‘çƒ­é—¨useræ‰“å‹åï¼Œæ¯ä¸ªitemå¯¹åº”çš„è¡Œä¸ºæ¬¡æ•°
         JavaPairRDD<String, Double> item_times = lines.mapToPair(new PairFunction<String, String, String>() {
             @Override
             public Tuple2<String, String> call(String s) {
@@ -87,10 +87,10 @@ public final class item_based_CF {
 
 //        List<Tuple2<String,Double>> y=item_times.collect();
 //        for(Tuple2<String,Double> x1:y){
-//            System.out.println("ÉÌÆ·"+x1._1+"³¤¶È:"+x1._2);
+//            System.out.println("å•†å“"+x1._1+"é•¿åº¦:"+x1._2);
 //        }
 
-        //Éú³Éitem1£ºitem2,score
+        //ç”Ÿæˆitem1ï¼šitem2,score
         JavaRDD<Tuple2<String, Tuple2<String, Double>>> i1i2 = user_behavior.reduceByKey(new Function2<String, String, String>() {
             @Override
             public String call(String s1, String s2) {
@@ -118,7 +118,7 @@ public final class item_based_CF {
         });
         user_behavior.unpersist();
 
-        //ÊÕ¼¯½á¹û£¬²¢³ıÒÔitemÈÈ¶È
+        //æ”¶é›†ç»“æœï¼Œå¹¶é™¤ä»¥itemçƒ­åº¦
         JavaPairRDD<String, Iterable<Tuple2<String, Double>>> i1i2pair = i1i2.mapToPair(new PairFunction<Tuple2<String, Tuple2<String, Double>>, Tuple2<String, String>, Double>() {
             @Override
             public Tuple2<Tuple2<String, String>, Double> call(Tuple2<String, Tuple2<String, Double>> s) throws Exception {
@@ -152,8 +152,9 @@ public final class item_based_CF {
             }
         }).groupByKey();
 
-        //¶Ô½á¹û½øĞĞÅÅĞò²¢Êä³ö
+        //å¯¹ç»“æœè¿›è¡Œæ’åºå¹¶è¾“å‡º
         List<Tuple2<String, Iterable<Tuple2<String, Double>>>> output = i1i2pair.collect();
+        i1i2pair.saveAsTextFile("output");
         for (Tuple2<String, Iterable<Tuple2<String, Double>>> tuple : output) {
             String item1 = tuple._1();
             Min_Heap heap = new Min_Heap(100);

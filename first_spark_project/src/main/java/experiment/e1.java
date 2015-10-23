@@ -25,6 +25,6 @@ public class e1 {
 //        ArrayList<String> s3=new ArrayList<String>(s2);
 //        s3.remove(0);
         int x=Integer.valueOf("-1");
-        System.out.println(String.valueOf(0.5773502691896257*0.5773502691896257));
+        System.out.println("我晕");
     }
 }
