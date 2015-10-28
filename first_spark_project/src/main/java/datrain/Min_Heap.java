@@ -84,20 +84,16 @@ public class Min_Heap {
         java.util.Arrays.sort(result, new MyComparator());
     }
 
-    class MyComparator implements Comparator {
-        public int compare(Object o1, Object o2) {
-            kv u1 = (kv) o1;
-            kv u2 = (kv) o2;
-            if (u1.value > u2.value) {
-                return -1;
-            } else {
-                return 1;
-            }
+    class MyComparator implements Comparator<kv> {
+        public int compare(kv o1, kv o2) {
+            kv u1 = o1;
+            kv u2 = o2;
+            return Double.compare(u2.value, u1.value);
         }
     }
 
     public static void main(String[] args) {
-        double a[] = {4.2e-10, 3.2, 5, 1, 2, .8, 9, 10e-10};
+        double a[] = {4.2e-10, 3.2, 5, 5, 2, .8, 9, 10e-10};
         String b[] = {"a", "b", "c", "d", "e", "f", "g", "h"};
         Min_Heap heap = new Min_Heap(10);
         for (int i = 0; i < a.length; i++) {

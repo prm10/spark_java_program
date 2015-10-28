@@ -1,5 +1,6 @@
 package datrain;
 
+import org.apache.spark.api.java.function.Function;
 import scala.Tuple2;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -28,11 +29,17 @@ public final class item_based_CF {
         }
 
         SparkConf sparkConf = new SparkConf().setAppName("item_based_CF");
-        sparkConf.set
         JavaSparkContext ctx = new JavaSparkContext(sparkConf);
-        JavaRDD<String> lines = ctx.textFile(args[0], 1);
-        System.out.println("总共读入" + lines.count() + "行数据");
+        JavaRDD<String> lines0 = ctx.textFile(args[0], 1);
+        System.out.println("总共读入" + lines0.count() + "行数据");
         //一次用户行为
+        JavaRDD<String> lines=lines0.filter(new Function<String, Boolean>() {
+            @Override
+            public Boolean call(String s) throws Exception {
+                String[] b = SPACE.split(s);
+                return Integer.parseInt(b[2])==1;
+            }
+        });
         JavaPairRDD<String, String> user_behavior = lines.mapToPair(new PairFunction<String, String, String>() {
             @Override
             public Tuple2<String, String> call(String s) {
@@ -46,6 +53,8 @@ public final class item_based_CF {
                 return new Tuple2<String, String>(b[0], c.toString());
             }
         }).cache();
+
+        System.out.println("共有浏览行为" + user_behavior.count() + "条。");
 
         //每个user的行为次数
         JavaPairRDD<String, Long> user_times = user_behavior.mapToPair(new PairFunction<Tuple2<String, String>, String, Long>() {
@@ -61,10 +70,7 @@ public final class item_based_CF {
             }
         });
 
-//        List<Tuple2<String,Long>> x=user_times.collect();
-//        for(Tuple2<String,Long> x1:x){
-//            System.out.println("用户"+x1._1+"长度:"+x1._2);
-//        }
+        System.out.println("共有用户" + user_times.count() + "个。");
 
         //考虑热门user打压后，每个item对应的行为次数
         JavaPairRDD<String, Double> item_times = lines.mapToPair(new PairFunction<String, String, String>() {
@@ -85,10 +91,7 @@ public final class item_based_CF {
             }
         }).cache();
 
-//        List<Tuple2<String,Double>> y=item_times.collect();
-//        for(Tuple2<String,Double> x1:y){
-//            System.out.println("商品"+x1._1+"长度:"+x1._2);
-//        }
+        System.out.println("共有商品" + item_times.count() + "个。");
 
         //生成item1：item2,score
         JavaRDD<Tuple2<String, Tuple2<String, Double>>> i1i2 = user_behavior.reduceByKey(new Function2<String, String, String>() {
@@ -96,11 +99,15 @@ public final class item_based_CF {
             public String call(String s1, String s2) {
                 return s1 + ";" + s2;
             }
+        }).filter(new Function<Tuple2<String, String>, Boolean>() {
+            @Override
+            public Boolean call(Tuple2<String, String> s) throws Exception {
+                return (s._2().split(";").length<1000);
+            }
         }).flatMap(new FlatMapFunction<Tuple2<String, String>, Tuple2<String, Tuple2<String, Double>>>() {
             @Override
             public Iterable<Tuple2<String, Tuple2<String, Double>>> call(Tuple2<String, String> ui) throws Exception {
                 String[] items = ui._2().split(";");
-                HashSet<String> itemSet = new HashSet<String>();
                 List<Tuple2<String, Tuple2<String, Double>>> output = new ArrayList<Tuple2<String, Tuple2<String, Double>>>();
                 for (int i1 = 0; i1 < items.length; i1++) {
                     String[] item1 = items[i1].split(",");
@@ -116,7 +123,8 @@ public final class item_based_CF {
                 return output;
             }
         });
-        user_behavior.unpersist();
+//        user_behavior.unpersist();
+        System.out.println("生成i1i2对" + i1i2.count() + "个。");
 
         //收集结果，并除以item热度
         JavaPairRDD<String, Iterable<Tuple2<String, Double>>> i1i2pair = i1i2.mapToPair(new PairFunction<Tuple2<String, Tuple2<String, Double>>, Tuple2<String, String>, Double>() {
@@ -152,27 +160,38 @@ public final class item_based_CF {
             }
         }).groupByKey();
 
+        System.out.println("生成结果i1i2对" + i1i2pair.count() + "个。");
+
+        //对结果排序
+        JavaPairRDD<String,String> outfile=i1i2pair.mapToPair(new PairFunction<Tuple2<String, Iterable<Tuple2<String, Double>>>, String, String>() {
+            @Override
+            public Tuple2<String, String> call(Tuple2<String, Iterable<Tuple2<String, Double>>> tuple) throws Exception {
+                String item1 = tuple._1();
+                Min_Heap heap = new Min_Heap(100);
+                Iterator<Tuple2<String, Double>> iter = tuple._2().iterator();
+                while (iter.hasNext()) {
+                    Tuple2<String, Double> tu = iter.next();
+                    heap.add(tu._1(), tu._2());
+                }
+                heap.sort();
+                Min_Heap.kv item_entry = heap.result[0];
+                String item_list = item_entry.key + ":" + item_entry.value;//rec_item_id,score
+                for (int i = 1; i < heap.size; i++) {
+                    item_entry = heap.result[i];
+                    item_list += ";" + item_entry.key + ":" + item_entry.value;
+                }
+                return new Tuple2<String, String>(item1,item_list);
+            }
+        });
+
         //对结果进行排序并输出
-        List<Tuple2<String, Iterable<Tuple2<String, Double>>>> output = i1i2pair.collect();
-        i1i2pair.saveAsTextFile("output");
-        for (Tuple2<String, Iterable<Tuple2<String, Double>>> tuple : output) {
-            String item1 = tuple._1();
-            Min_Heap heap = new Min_Heap(100);
-            Iterator<Tuple2<String, Double>> iter = tuple._2().iterator();
-            while (iter.hasNext()) {
-                Tuple2<String, Double> tu = iter.next();
-                heap.add(tu._1(), tu._2());
-            }
-            heap.sort();
-            Min_Heap.kv item_entry = heap.result[0];
-            String item_list = item_entry.key + ":" + item_entry.value;//rec_item_id,score
-            for (int i = 1; i < heap.size; i++) {
-                item_entry = heap.result[i];
-                item_list += ";" + item_entry.key + ":" + item_entry.value;
-            }
-            System.out.println("[" + item1 + "]");
-            System.out.println(item_list);
-        }
+        System.out.println("生成item共"+outfile.count()+"个");
+        outfile.saveAsTextFile("/tmp/prm_output1");
+//        List<Tuple2<String, String>> output = outfile.collect();
+//        for (Tuple2<String, String> tuple : output) {
+//            System.out.println("[" + tuple._1 + "]");
+//            System.out.println(tuple._2);
+//        }
         ctx.stop();
     }
 }
