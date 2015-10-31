@@ -17,3 +17,6 @@ http://sparkbj38080.tunnel.yottabig.com:8000/
 
 
 
+共有10000个用户、2908334个商品的11600432条浏览行为
+
+groupByKey会造成大量的数据搬移，效率不高

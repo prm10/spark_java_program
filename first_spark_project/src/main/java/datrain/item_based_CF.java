@@ -25,7 +25,7 @@ public final class item_based_CF {
             System.exit(1);
         }
 
-        SparkConf sparkConf = new SparkConf().setAppName("item_based_CF");
+        SparkConf sparkConf = new SparkConf().setAppName("prm14.item_based_CF");
         JavaSparkContext ctx = new JavaSparkContext(sparkConf);
         JavaRDD<String> lines0 = ctx.textFile(args[0], 1);
         System.out.println("总共读入" + lines0.count() + "行数据");
@@ -91,7 +91,8 @@ public final class item_based_CF {
         System.out.println("共有商品" + item_times.count() + "个。");
 
         //生成item1：item2,score
-        JavaPairRDD<String,String> outfile = user_behavior.reduceByKey(new Function2<String, String, String>() {
+//        JavaPairRDD<String,String> outfile
+        JavaPairRDD<String, Iterable<Tuple2<String, Double>>> i1i2= user_behavior.reduceByKey(new Function2<String, String, String>() {
             @Override//将每个用户的行为连接起来
             public String call(String s1, String s2) {
                 return s1 + ";" + s2;
@@ -119,7 +120,11 @@ public final class item_based_CF {
                 }
                 return output;
             }
-        }).groupByKey().mapToPair(new PairFunction<Tuple2<String, Iterable<Tuple2<String, Double>>>, String, HashMap<String, Double>>() {
+        }).groupByKey();
+
+        System.out.println("第一阶段i1i2有"+i1i2.count()+"个");
+
+        JavaPairRDD<String, Iterable<Tuple2<String, Double>>> i2i1= i1i2.mapToPair(new PairFunction<Tuple2<String, Iterable<Tuple2<String, Double>>>, String, HashMap<String, Double>>() {
             @Override//将i1:i2缩紧为i1：i2_list
             public Tuple2<String, HashMap<String, Double>> call(Tuple2<String, Iterable<Tuple2<String, Double>>> s) throws Exception {
                 HashMap<String, Double> out = new HashMap<String, Double>();
@@ -145,7 +150,11 @@ public final class item_based_CF {
                 }
                 return out;
             }
-        }).groupByKey().mapToPair(new PairFunction<Tuple2<String, Iterable<Tuple2<String, Double>>>, String, HashMap<String, Double>>() {
+        }).groupByKey();
+
+        System.out.println("第二阶段i2i1有"+i2i1.count()+"个");
+
+        JavaPairRDD<String, String> outfile = i2i1.mapToPair(new PairFunction<Tuple2<String, Iterable<Tuple2<String, Double>>>, String, HashMap<String, Double>>() {
             @Override//将i2:i1缩紧为i2：i1_list
             public Tuple2<String, HashMap<String, Double>> call(Tuple2<String, Iterable<Tuple2<String, Double>>> s) throws Exception {
                 HashMap<String, Double> out = new HashMap<String, Double>();
