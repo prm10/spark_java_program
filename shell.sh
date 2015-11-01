@@ -3,20 +3,38 @@ scp ~/prm14-1.0.0.jar root@hadoopserver3:/home
 ssh root\@hadoopserver3
 
 cd /usr/hdp/2.3.2.0-2950/spark
+<<<<<<< HEAD
 ./bin/spark-submit --class "datrain.item_based_CF" --master spark://192.168.1.50:7077 --executor-memory 20G --total-executor-cores 40 /home/prm14-1.0.0.jar /tmp/prm_user1
+=======
+./bin/spark-submit --class "datrain.item_based_CF" --master spark://192.168.1.50:7077 --executor-memory 20G /home/prm14-1.0.0.jar /tmp/prm_user1
+>>>>>>> origin/detect_bug
 
 su hdfs
-hadoop fs -rm -r /tmp/prm_output1
+hadoop fs -rm -r /tmp/prm_output
 exit
 
 spark-submit --class "org.apache.spark.examples.JavaWordCount" --master local[4] ~/Downloads/prm14-1.0.0.jar ~/Downloads/behavior.txt
 spark-submit --class "datrain.item_based_CF" --master local[4] --executor-memory 2G ~/Downloads/prm14-1.0.0.jar ~/Downloads/behavior.txt
 spark-submit --class "datrain.item_based_CF" --master local[4] prm14-1.0.0.jar behavior.txt
 
+<<<<<<< HEAD
+<<<<<<< HEAD
 http://sparkbj38080.tunnel.yottabig.com:8000/
 
 scp /data/tian root@hadoopserver1:/home
 
 共有10000个用户、2908334个商品的11600432条浏览行为
 
+<<<<<<< HEAD
 groupByKey会造成大量的数据搬移，效率不高
+=======
+共有10000个用户、2908334个商品的11600432条浏览行为
+
+groupByKey会造成大量的数据搬移，效率不高
+=======
+http://sparkbj38080.tunnel.yottabig.com:8000/
+>>>>>>> parent of fd1cd6e... simplest one
+=======
+http://sparkbj38080.tunnel.yottabig.com:8000/
+>>>>>>> parent of fd1cd6e... simplest one
+>>>>>>> origin/detect_bug
