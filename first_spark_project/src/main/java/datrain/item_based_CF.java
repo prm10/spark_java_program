@@ -95,9 +95,14 @@ public final class item_based_CF {
 
         //生成item1：item2,score
 <<<<<<< HEAD
+<<<<<<< HEAD
 //        JavaPairRDD<String,String> outfile
         JavaPairRDD<String, Iterable<Tuple2<String, Double>>> i1i2= user_behavior.reduceByKey(new Function2<String, String, String>() {
             @Override//将每个用户的行为连接起来
+=======
+        JavaRDD<Tuple2<String, Tuple2<String, Double>>> i1i2 = user_behavior.reduceByKey(new Function2<String, String, String>() {
+            @Override
+>>>>>>> parent of fd1cd6e... simplest one
 =======
         JavaRDD<Tuple2<String, Tuple2<String, Double>>> i1i2 = user_behavior.reduceByKey(new Function2<String, String, String>() {
             @Override
@@ -129,6 +134,7 @@ public final class item_based_CF {
                 return output;
             }
 <<<<<<< HEAD
+<<<<<<< HEAD
         }).groupByKey();
 
         System.out.println("第一阶段i1i2有"+i1i2.count()+"个");
@@ -148,6 +154,8 @@ public final class item_based_CF {
                 }
                 return new Tuple2<String, HashMap<String, Double>>(s1, out);
 =======
+=======
+>>>>>>> parent of fd1cd6e... simplest one
         });
 //        user_behavior.unpersist();
         System.out.println("生成i1i2对" + i1i2.count() + "个。");
@@ -162,6 +170,7 @@ public final class item_based_CF {
             @Override
             public Double call(Double s1, Double s2) throws Exception {
                 return s1 + s2;
+<<<<<<< HEAD
 >>>>>>> parent of fd1cd6e... simplest one
             }
         }).mapToPair(new PairFunction<Tuple2<Tuple2<String, String>, Double>, String, Tuple2<String, Double>>() {
@@ -169,10 +178,19 @@ public final class item_based_CF {
             public Tuple2<String, Tuple2<String, Double>> call(Tuple2<Tuple2<String, String>, Double> s) throws Exception {
                 return new Tuple2<String, Tuple2<String, Double>>(s._1()._1(), new Tuple2<String, Double>(s._1()._2(), s._2()));
             }
+=======
+            }
+        }).mapToPair(new PairFunction<Tuple2<Tuple2<String, String>, Double>, String, Tuple2<String, Double>>() {
+            @Override
+            public Tuple2<String, Tuple2<String, Double>> call(Tuple2<Tuple2<String, String>, Double> s) throws Exception {
+                return new Tuple2<String, Tuple2<String, Double>>(s._1()._1(), new Tuple2<String, Double>(s._1()._2(), s._2()));
+            }
+>>>>>>> parent of fd1cd6e... simplest one
         }).join(item_times).mapToPair(new PairFunction<Tuple2<String, Tuple2<Tuple2<String, Double>, Double>>, String, Tuple2<String, Double>>() {
             @Override
             public Tuple2<String, Tuple2<String, Double>> call(Tuple2<String, Tuple2<Tuple2<String, Double>, Double>> s) throws Exception {
                 String i1 = s._1();
+<<<<<<< HEAD
 <<<<<<< HEAD
                 double weight=s._2._2;
                 List<Tuple2<String, Tuple2<String, Double>>> out=new ArrayList<Tuple2<String, Tuple2<String, Double>>>();
@@ -199,6 +217,11 @@ public final class item_based_CF {
                         out.put(item2, score);
                 }
                 return new Tuple2<String, HashMap<String, Double>>(s1, out);
+=======
+                String i2 = s._2()._1()._1();
+                double score = s._2()._1()._2() / Math.sqrt(s._2()._2());
+                return new Tuple2<String, Tuple2<String, Double>>(i2, new Tuple2<String, Double>(i1, score));
+>>>>>>> parent of fd1cd6e... simplest one
 =======
                 String i2 = s._2()._1()._1();
                 double score = s._2()._1()._2() / Math.sqrt(s._2()._2());

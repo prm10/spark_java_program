@@ -14,6 +14,7 @@ spark-submit --class "datrain.item_based_CF" --master local[4] --executor-memory
 spark-submit --class "datrain.item_based_CF" --master local[4] prm14-1.0.0.jar behavior.txt
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 http://sparkbj38080.tunnel.yottabig.com:8000/
 
 
@@ -21,6 +22,9 @@ http://sparkbj38080.tunnel.yottabig.com:8000/
 共有10000个用户、2908334个商品的11600432条浏览行为
 
 groupByKey会造成大量的数据搬移，效率不高
+=======
+http://sparkbj38080.tunnel.yottabig.com:8000/
+>>>>>>> parent of fd1cd6e... simplest one
 =======
 http://sparkbj38080.tunnel.yottabig.com:8000/
 >>>>>>> parent of fd1cd6e... simplest one
