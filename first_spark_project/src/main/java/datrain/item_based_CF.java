@@ -1,11 +1,14 @@
 package datrain;
 
-import org.apache.spark.api.java.function.*;
+import org.apache.spark.api.java.function.Function;
 import scala.Tuple2;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.function.FlatMapFunction;
+import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.api.java.function.PairFunction;
 
 import java.util.*;
 import java.util.regex.Pattern;
@@ -91,19 +94,24 @@ public final class item_based_CF {
         System.out.println("共有商品" + item_times.count() + "个。");
 
         //生成item1：item2,score
+<<<<<<< HEAD
 //        JavaPairRDD<String,String> outfile
         JavaPairRDD<String, Iterable<Tuple2<String, Double>>> i1i2= user_behavior.reduceByKey(new Function2<String, String, String>() {
             @Override//将每个用户的行为连接起来
+=======
+        JavaRDD<Tuple2<String, Tuple2<String, Double>>> i1i2 = user_behavior.reduceByKey(new Function2<String, String, String>() {
+            @Override
+>>>>>>> parent of fd1cd6e... simplest one
             public String call(String s1, String s2) {
                 return s1 + ";" + s2;
             }
         }).filter(new Function<Tuple2<String, String>, Boolean>() {
-            @Override//去除行为过多的用户
+            @Override
             public Boolean call(Tuple2<String, String> s) throws Exception {
-                return (s._2().split(";").length < 1000);
+                return (s._2().split(";").length<1000);
             }
-        }).flatMapToPair(new PairFlatMapFunction<Tuple2<String, String>, String, Tuple2<String, Double>>() {
-            @Override//生成i1i1pair
+        }).flatMap(new FlatMapFunction<Tuple2<String, String>, Tuple2<String, Tuple2<String, Double>>>() {
+            @Override
             public Iterable<Tuple2<String, Tuple2<String, Double>>> call(Tuple2<String, String> ui) throws Exception {
                 String[] items = ui._2().split(";");
                 List<Tuple2<String, Tuple2<String, Double>>> output = new ArrayList<Tuple2<String, Tuple2<String, Double>>>();
@@ -120,6 +128,7 @@ public final class item_based_CF {
                 }
                 return output;
             }
+<<<<<<< HEAD
         }).groupByKey();
 
         System.out.println("第一阶段i1i2有"+i1i2.count()+"个");
@@ -138,11 +147,33 @@ public final class item_based_CF {
                         out.put(item2, score);
                 }
                 return new Tuple2<String, HashMap<String, Double>>(s1, out);
+=======
+        });
+//        user_behavior.unpersist();
+        System.out.println("生成i1i2对" + i1i2.count() + "个。");
+
+        //收集结果，并除以item热度
+        JavaPairRDD<String, Iterable<Tuple2<String, Double>>> i1i2pair = i1i2.mapToPair(new PairFunction<Tuple2<String, Tuple2<String, Double>>, Tuple2<String, String>, Double>() {
+            @Override
+            public Tuple2<Tuple2<String, String>, Double> call(Tuple2<String, Tuple2<String, Double>> s) throws Exception {
+                return new Tuple2<Tuple2<String, String>, Double>(new Tuple2<String, String>(s._1(), s._2()._1()), s._2()._2());
             }
-        }).join(item_times).flatMapToPair(new PairFlatMapFunction<Tuple2<String, Tuple2<HashMap<String, Double>, Double>>, String, Tuple2<String, Double>>() {
-            @Override//除以i1的user_weight，并以i2:i1,score输出
-            public Iterable<Tuple2<String, Tuple2<String, Double>>> call(Tuple2<String, Tuple2<HashMap<String, Double>, Double>> s) throws Exception {
+        }).reduceByKey(new Function2<Double, Double, Double>() {
+            @Override
+            public Double call(Double s1, Double s2) throws Exception {
+                return s1 + s2;
+>>>>>>> parent of fd1cd6e... simplest one
+            }
+        }).mapToPair(new PairFunction<Tuple2<Tuple2<String, String>, Double>, String, Tuple2<String, Double>>() {
+            @Override
+            public Tuple2<String, Tuple2<String, Double>> call(Tuple2<Tuple2<String, String>, Double> s) throws Exception {
+                return new Tuple2<String, Tuple2<String, Double>>(s._1()._1(), new Tuple2<String, Double>(s._1()._2(), s._2()));
+            }
+        }).join(item_times).mapToPair(new PairFunction<Tuple2<String, Tuple2<Tuple2<String, Double>, Double>>, String, Tuple2<String, Double>>() {
+            @Override
+            public Tuple2<String, Tuple2<String, Double>> call(Tuple2<String, Tuple2<Tuple2<String, Double>, Double>> s) throws Exception {
                 String i1 = s._1();
+<<<<<<< HEAD
                 double weight=s._2._2;
                 List<Tuple2<String, Tuple2<String, Double>>> out=new ArrayList<Tuple2<String, Tuple2<String, Double>>>();
                 for(Map.Entry<String, Double> h:s._2()._1().entrySet()){
@@ -168,24 +199,33 @@ public final class item_based_CF {
                         out.put(item2, score);
                 }
                 return new Tuple2<String, HashMap<String, Double>>(s1, out);
+=======
+                String i2 = s._2()._1()._1();
+                double score = s._2()._1()._2() / Math.sqrt(s._2()._2());
+                return new Tuple2<String, Tuple2<String, Double>>(i2, new Tuple2<String, Double>(i1, score));
+>>>>>>> parent of fd1cd6e... simplest one
             }
-        }).join(item_times).flatMapToPair(new PairFlatMapFunction<Tuple2<String, Tuple2<HashMap<String, Double>, Double>>, String, Tuple2<String, Double>>() {
-            @Override//除以i2的user_weight，并以i1:i2,score输出
-            public Iterable<Tuple2<String, Tuple2<String, Double>>> call(Tuple2<String, Tuple2<HashMap<String, Double>, Double>> s) throws Exception {
+        }).join(item_times).mapToPair(new PairFunction<Tuple2<String, Tuple2<Tuple2<String, Double>, Double>>, String, Tuple2<String, Double>>() {
+            @Override
+            public Tuple2<String, Tuple2<String, Double>> call(Tuple2<String, Tuple2<Tuple2<String, Double>, Double>> s) throws Exception {
                 String i1 = s._1();
-                double weight=s._2._2;
-                List<Tuple2<String, Tuple2<String, Double>>> out=new ArrayList<Tuple2<String, Tuple2<String, Double>>>();
-                for(Map.Entry<String, Double> h:s._2()._1().entrySet()){
-                    out.add(new Tuple2<String, Tuple2<String, Double>>(h.getKey(),new Tuple2<String, Double>(i1,h.getValue()/Math.sqrt(weight))));
-                }
-                return out;
+                String i2 = s._2()._1()._1();
+                double score = s._2()._1()._2() / Math.sqrt(s._2()._2());
+                return new Tuple2<String, Tuple2<String, Double>>(i2, new Tuple2<String, Double>(i1, score));
             }
-        }).groupByKey().mapToPair(new PairFunction<Tuple2<String, Iterable<Tuple2<String, Double>>>, String, String>() {
-            @Override//对结果排序
+        }).groupByKey();
+
+        System.out.println("生成结果i1i2对" + i1i2pair.count() + "个。");
+
+        //对结果排序
+        JavaPairRDD<String,String> outfile=i1i2pair.mapToPair(new PairFunction<Tuple2<String, Iterable<Tuple2<String, Double>>>, String, String>() {
+            @Override
             public Tuple2<String, String> call(Tuple2<String, Iterable<Tuple2<String, Double>>> tuple) throws Exception {
                 String item1 = tuple._1();
                 Min_Heap heap = new Min_Heap(100);
-                for(Tuple2<String, Double> tu:tuple._2()){
+                Iterator<Tuple2<String, Double>> iter = tuple._2().iterator();
+                while (iter.hasNext()) {
+                    Tuple2<String, Double> tu = iter.next();
                     heap.add(tu._1(), tu._2());
                 }
                 heap.sort();
@@ -201,7 +241,7 @@ public final class item_based_CF {
 
         //对结果进行排序并输出
         System.out.println("生成item共"+outfile.count()+"个");
-        outfile.saveAsTextFile("/tmp/prm_output");
+        outfile.saveAsTextFile("/tmp/prm_output1");
 //        List<Tuple2<String, String>> output = outfile.collect();
 //        for (Tuple2<String, String> tuple : output) {
 //            System.out.println("[" + tuple._1 + "]");
