@@ -111,6 +111,6 @@ public class Min_Heap {
             item_entry = heap.result[i];
             item_list += ";" + item_entry.key + ":" + item_entry.value / weight;
         }
-        System.out.println(item_list);
+        System.out.println(String.valueOf(0.5773502691896257*0.5773502691896257));
     }
 }

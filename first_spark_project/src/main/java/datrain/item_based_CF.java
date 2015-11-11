@@ -99,7 +99,7 @@ public final class item_based_CF {
         }).filter(new Function<Tuple2<Long, String>, Boolean>() {
             @Override//去除行为过多的用户
             public Boolean call(Tuple2<Long, String> s) throws Exception {
-                return (s._2().split(";").length < 100);
+                return (s._2().split(";").length < 500);
             }
         }).flatMapToPair(new PairFlatMapFunction<Tuple2<Long, String>, Long, Tuple2<Long, Double>>() {
             @Override//生成i1i2pair
@@ -193,8 +193,8 @@ public final class item_based_CF {
         //对结果进行排序并输出
         System.out.println("生成item共"+outfile.count()+"个");
         outfile.saveAsTextFile("/tmp/prm_output");
-//        List<Tuple2<String, String>> output = outfile.collect();
-//        for (Tuple2<String, String> tuple : output) {
+//        List<Tuple2<Long, String>> output = outfile.collect();
+//        for (Tuple2<Long, String> tuple : output) {
 //            System.out.println("[" + tuple._1 + "]");
 //            System.out.println(tuple._2);
 //        }
