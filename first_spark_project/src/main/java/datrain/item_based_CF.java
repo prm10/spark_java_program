@@ -1,12 +1,17 @@
 package datrain;
 
 import org.apache.spark.api.java.function.*;
+import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.hive.HiveContext;
 import scala.Tuple2;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -17,6 +22,15 @@ import java.util.regex.Pattern;
 
 public final class item_based_CF {
     private static final Pattern SPACE = Pattern.compile(",");
+    public static class outfile_result implements Serializable {
+        private Long item_id;
+        private String item_list;
+
+        outfile_result(Long i1,String list) {
+            item_id=i1;
+            item_list=list;
+        }
+    }
 
     public static void main(String[] args) throws Exception {
 
@@ -27,7 +41,22 @@ public final class item_based_CF {
 
         SparkConf sparkConf = new SparkConf().setAppName("item_based_CF");
         JavaSparkContext ctx = new JavaSparkContext(sparkConf);
-        JavaRDD<String> lines0 = ctx.textFile(args[0], 1);
+        //从文本读入数据
+//        JavaRDD<String> lines0 = ctx.textFile(args[0], 1);
+        //从hive读入数据
+        HiveContext hiveCtx = new HiveContext(ctx.sc());
+        hiveCtx.sql("use tmalldb");
+        JavaRDD<String> lines0 = hiveCtx.sql("select * from user_info").toJavaRDD().map(new Function<Row, String>() {
+            @Override
+            public String call(Row row) throws Exception {
+                String out=row.getString(0);
+                for(int i=1;i<row.length();i++){
+                    out+=","+row.getString(i);
+                }
+                return out;
+            }
+        });
+
         System.out.println("总共读入" + lines0.count() + "行数据");
         //一次用户行为
         JavaRDD<String> lines=lines0.filter(new Function<String, Boolean>() {
@@ -91,7 +120,7 @@ public final class item_based_CF {
         System.out.println("共有商品" + item_times.count() + "个。");
 
         //生成item1：item2,score
-        JavaPairRDD<Long,String> outfile = user_behavior.reduceByKey(new Function2<String, String, String>() {
+        JavaRDD<outfile_result> outfile = user_behavior.reduceByKey(new Function2<String, String, String>() {
             @Override//将每个用户的行为连接起来
             public String call(String s1, String s2) {
                 return s1 + ";" + s2;
@@ -171,9 +200,9 @@ public final class item_based_CF {
                 }
                 return out;
             }
-        }).groupByKey().mapToPair(new PairFunction<Tuple2<Long, Iterable<Tuple2<Long, Double>>>, Long, String>() {
-            @Override//对结果排序
-            public Tuple2<Long, String> call(Tuple2<Long, Iterable<Tuple2<Long, Double>>> tuple) throws Exception {
+        }).groupByKey().map(new Function<Tuple2<Long, Iterable<Tuple2<Long, Double>>>, outfile_result>() {
+            @Override
+            public outfile_result call(Tuple2<Long, Iterable<Tuple2<Long, Double>>> tuple) throws Exception {
                 Long item1 = tuple._1();
                 Min_Heap heap = new Min_Heap(100);
                 for(Tuple2<Long, Double> tu:tuple._2()){
@@ -186,13 +215,20 @@ public final class item_based_CF {
                     item_entry = heap.result[i];
                     item_list += ";" + item_entry.key + ":" + item_entry.value;
                 }
-                return new Tuple2<Long, String>(item1,item_list);
+                return new outfile_result(item1,item_list);
             }
         });
 
         //对结果进行排序并输出
         System.out.println("生成item共"+outfile.count()+"个");
-        outfile.saveAsTextFile("/tmp/prm_output");
+//        存入文件
+//        outfile.saveAsTextFile("/tmp/prm_output");
+//        存入hive
+//        hiveCtx.sql("create external table if not exists prm14_item_based_CF_result(item_id bigint,item_list string) partition by ds");
+//        hiveCtx.createDataFrame(outfile, outfile_result.class).registerTempTable("table1");
+//        hiveCtx.sql("insert into prm14_item_based_CF_result partition(ds=from_unixtime(unix_timestamp(),'yyyy-MM-dd')) select item_id,item_list from table1");
+
+//        JavaRDD<Row> result_frame=outfile.to
 //        List<Tuple2<Long, String>> output = outfile.collect();
 //        for (Tuple2<Long, String> tuple : output) {
 //            System.out.println("[" + tuple._1 + "]");

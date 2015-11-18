@@ -40,6 +40,7 @@ org\apache\spark\examples\mllib\JavaRandomForestExample$2.class
 datrain\item_based_CF$3.class
 org\apache\spark\examples\sql\JavaSparkSQL$3.class
 org\apache\spark\examples\mllib\JavaGradientBoostedTreesRunner$5.class
+datrain\item_based_CF$16.class
 org\apache\spark\examples\sql\JavaSparkSQL$4.class
 org\apache\spark\examples\JavaTC$1.class
 org\apache\spark\examples\mllib\JavaDecisionTree$6.class
@@ -59,8 +60,8 @@ org\apache\spark\examples\JavaWordCount.class
 org\apache\spark\examples\sql\JavaSparkSQL$1.class
 org\apache\spark\examples\mllib\JavaLDAExample$1.class
 org\apache\spark\examples\JavaSparkPi$1.class
-datrain\ItemInfo.class
 org\apache\spark\examples\mllib\JavaRandomForestExample$5.class
+datrain\item_based_CF$outfile_result.class
 org\apache\spark\examples\sql\JavaSparkSQL$Person.class
 datrain\Min_Heap.class
 org\apache\spark\examples\mllib\JavaPowerIterationClusteringExample.class
