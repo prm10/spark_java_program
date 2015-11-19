@@ -1,7 +1,9 @@
 package experiment;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -25,6 +27,8 @@ public class e1 {
 //        ArrayList<String> s3=new ArrayList<String>(s2);
 //        s3.remove(0);
         int x=Integer.valueOf("-1");
-        System.out.println("我晕");
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        String ds=df.format(new Date());
+        System.out.println(ds);
     }
 }

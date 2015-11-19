@@ -5,6 +5,7 @@ datrain\item_based_CF$11.class
 org\apache\spark\examples\JavaStatusTrackerDemo.class
 datrain\item_based_CF$2.class
 org\apache\spark\examples\mllib\JavaRandomForestExample.class
+datrain\item_based_CF$17.class
 datrain\item_based_CF$14.class
 datrain\item_based_CF$1.class
 org\apache\spark\examples\JavaPageRank$2.class
