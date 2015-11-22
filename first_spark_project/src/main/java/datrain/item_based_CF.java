@@ -42,13 +42,25 @@ public final class item_based_CF {
 
         SparkConf sparkConf = new SparkConf().setAppName("item_based_CF");
         JavaSparkContext ctx = new JavaSparkContext(sparkConf);
-        //从文本读入数据
+        //从文本读入数据，测试用
 //        JavaRDD<String> lines0 = ctx.textFile(args[0], 1);
+//        JavaPairRDD<Long, Long> user_behavior=lines0.filter(new Function<String, Boolean>() {
+//            @Override
+//            public Boolean call(String s) throws Exception {
+//                String [] info=s.split(",");
+//                return Long.parseLong(info[2])==1L;
+//            }
+//        }).mapToPair(new PairFunction<String, Long, Long>() {
+//            @Override
+//            public Tuple2<Long, Long> call(String s) throws Exception {
+//                String [] info=s.split(",");
+//                return new Tuple2<Long, Long>(Long.parseLong(info[0]),Long.parseLong(info[1]));
+//            }
+//        });
         //从hive读入数据
         HiveContext hiveCtx = new HiveContext(ctx.sc());
         hiveCtx.sql("use tmalldb");//指定数据库
         DataFrame lines=hiveCtx.sql("select * from user_info");//读取数据，存入dataframe
-
         System.out.println("总共读入" + lines.count() + "行数据");
         //一次用户行为：将lines转为RDD格式，并通过判断用户行为类别保留浏览行为。读入的Hive数据转为RDD后为JavaRDD<Row>，具体Row操作见下面示例
         JavaPairRDD<Long, Long> user_behavior=lines.toJavaRDD().filter(new Function<Row, Boolean>() {
@@ -192,6 +204,7 @@ public final class item_based_CF {
                 return new outfile_result(item1,item_list);
             }
         });
+
 //        JavaRDD<outfile_result> outfile = user_behavior.reduceByKey(new Function2<Long, Long, Long>() {
 //            @Override//将每个用户的行为连接起来
 //            public String call(Long s1, Long s2) {
@@ -295,17 +308,28 @@ public final class item_based_CF {
         System.out.println("生成i1i2pair共"+outfile.count()+"个");
 //        存入文件
 //        outfile.saveAsTextFile("/tmp/prm_output");
-//        存入hive
-        hiveCtx.sql("create external table if not exists prm14_item_based_CF_result(item_id bigint,item_list string) partitioned by (ds string)");
-        hiveCtx.createDataFrame(outfile, outfile_result.class).registerTempTable("table1");
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        String ds=df.format(new Date());
-        hiveCtx.sql("insert into table prm14_item_based_CF_result partition(ds='"+ds+"') select item_id,item_list from table1");
 
-//        List<Tuple2<Long, String>> output = outfile.collect();
-//        for (Tuple2<Long, String> tuple : output) {
-//            System.out.println("[" + tuple._1 + "]");
-//            System.out.println(tuple._2);
+//        存入hive
+        hiveCtx.sql("create external table if not exists prm14_result(item_id bigint,item_list string) partitioned by (ds string)");
+        DataFrame result_df=hiveCtx.createDataFrame(outfile, outfile_result.class);
+        System.out.println("生成的DataFrame："+result_df.count()+"行");
+        result_df.printSchema();
+        result_df.registerTempTable("temp_table1");
+//        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+//        String ds=df.format(new Date());
+//        JavaRDD<String> re=hiveCtx.sql("select * from temp_table1 limit 10").toJavaRDD().map(new Function<Row, String>() {
+//            @Override
+//            public String call(Row row) throws Exception {
+//                return String.valueOf(row.get(0))+row.getString(1);
+//            }
+//        });
+//        System.out.println(re.collect());
+//        hiveCtx.sql("insert overwrite table prm14_result partition(ds='"+ds+"') select * from temp_table1");
+
+//        List<outfile_result> output = outfile.collect();
+//        for (outfile_result tuple : output) {
+//            System.out.println("[" + tuple.item_id + "]");
+//            System.out.println(tuple.item_list);
 //        }
         ctx.stop();
     }

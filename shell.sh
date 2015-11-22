@@ -21,17 +21,39 @@ http://sparkbj.tunnel.yottabig.com:8000/
 
 yarn application -kill application_1447840502449_0012
 
-select * from tmalldb.prm14_item_based_CF_result limit 10;
 
-一：
+
+select * from tmalldb.prm14_result limit 10;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+庞人铭一：
 改进协同过滤算法的输入输出接口，根据团队目标，采用DataFrame与Hive进行数据交互成功，这样方便上下游的程序进行数据接口的定义和交互；
 熟悉Hive的操作，包括创建表和插入数据等操作，并在spark程序中执行sql语句成功。
-二：
+庞人铭二：
 根据李滔博士建议，对spark程序的三个方面进行优化：
 1、将item的统计总和以broadcast的方式加载到所有worker，避免join操作；
 2、用vector替换string，加速i1i2pair的生成
 3、参考论文，对历史数据进行抽样后再给算法计算，减少运算量。
-三：
+庞人铭三：
 按上述要求继续优化代码：
 对于第1个优化方向，发现item的统计总和item_times太大，broadcast到所有worker会内存溢出（提示需要190G的空间，显然不够。。），只好作罢；
 对于第2个优化方向，已经优化，但是速度提升不明显；
