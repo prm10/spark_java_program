@@ -12,6 +12,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 
 import java.io.Serializable;
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.Date;
@@ -23,13 +24,14 @@ import java.text.SimpleDateFormat;
 
 public final class item_based_CF {
     private static final Pattern SPACE = Pattern.compile(",");
+
     public static class outfile_result implements Serializable {
         public Long item_id;
         public String item_list;
 
-        outfile_result(Long i1,String list) {
-            item_id=i1;
-            item_list=list;
+        outfile_result(Long i1, String list) {
+            item_id = i1;
+            item_list = list;
         }
     }
 
@@ -40,7 +42,8 @@ public final class item_based_CF {
             System.exit(1);
         }
 
-        SparkConf sparkConf = new SparkConf().setAppName("item_based_CF");
+        SparkConf sparkConf = new SparkConf().setAppName("prm_item_based_CF");
+        sparkConf.set("spark.ui.port", "5555");
         JavaSparkContext ctx = new JavaSparkContext(sparkConf);
         //从文本读入数据，测试用
 //        JavaRDD<String> lines0 = ctx.textFile(args[0], 1);
@@ -60,18 +63,18 @@ public final class item_based_CF {
         //从hive读入数据
         HiveContext hiveCtx = new HiveContext(ctx.sc());
         hiveCtx.sql("use tmalldb");//指定数据库
-        DataFrame lines=hiveCtx.sql("select * from user_info");//读取数据，存入dataframe
+        DataFrame lines = hiveCtx.sql("select * from user_info");//读取数据，存入dataframe
         System.out.println("总共读入" + lines.count() + "行数据");
         //一次用户行为：将lines转为RDD格式，并通过判断用户行为类别保留浏览行为。读入的Hive数据转为RDD后为JavaRDD<Row>，具体Row操作见下面示例
-        JavaPairRDD<Long, Long> user_behavior=lines.toJavaRDD().filter(new Function<Row, Boolean>() {
+        JavaPairRDD<Long, Long> user_behavior = lines.toJavaRDD().filter(new Function<Row, Boolean>() {
             @Override
             public Boolean call(Row row) throws Exception {
-                return Long.parseLong(row.getString(2))==1L;
+                return Long.parseLong(row.getString(2)) == 1L;
             }
         }).mapToPair(new PairFunction<Row, Long, Long>() {
             @Override
             public Tuple2<Long, Long> call(Row row) throws Exception {
-                return new Tuple2<Long, Long>(Long.parseLong(row.getString(0)),Long.parseLong(row.getString(1)));
+                return new Tuple2<Long, Long>(Long.parseLong(row.getString(0)), Long.parseLong(row.getString(1)));
             }
         });
 
@@ -81,7 +84,7 @@ public final class item_based_CF {
         final Map<Long, Long> user_times = user_behavior.mapToPair(new PairFunction<Tuple2<Long, Long>, Long, Long>() {
             @Override
             public Tuple2<Long, Long> call(Tuple2<Long, Long> s) throws Exception {
-                return new Tuple2<Long, Long>(s._1,1L);
+                return new Tuple2<Long, Long>(s._1, 1L);
             }
         }).reduceByKey(new Function2<Long, Long, Long>() {
             @Override
@@ -93,38 +96,44 @@ public final class item_based_CF {
 
         System.out.println("共有用户" + user_times.size() + "个。");
 
-        //考虑热门user打压后，每个item对应的行为次数
-        JavaPairRDD<Long, Double> item_times =user_behavior.mapToPair(new PairFunction<Tuple2<Long, Long>, Long, Double>() {
+        //每个item的行为次数
+        final Map<Long, Long> item_num = user_behavior.mapToPair(new PairFunction<Tuple2<Long, Long>, Long, Long>() {
             @Override
-            public Tuple2<Long, Double> call(Tuple2<Long, Long> s) throws Exception {
-                return new Tuple2<Long, Double>(s._2, 1.0 / Math.log(1 + user_times.get(s._1)));//item,count;
+            public Tuple2<Long, Long> call(Tuple2<Long, Long> s) throws Exception {
+                return new Tuple2<Long, Long>(s._2, 1L);
             }
-        }).reduceByKey(new Function2<Double, Double, Double>() {
+        }).reduceByKey(new Function2<Long, Long, Long>() {
             @Override
-            public Double call(Double i1, Double i2) throws Exception {
-                return i1 + i2;
+            public Long call(Long l1, Long l2) throws Exception {
+                return l1 + l2;
             }
-        });
-//        ctx.broadcast(item_times);
-        System.out.println("共有商品" + item_times.count() + "个。");
+        }).filter(new Function<Tuple2<Long, Long>, Boolean>() {
+            @Override
+            public Boolean call(Tuple2<Long, Long> s) throws Exception {
+                return s._2 > 50L;
+            }
+        }).collectAsMap();
 
-        //生成user:vector<item,times>
-        JavaPairRDD<Long,Vector<Tuple2<Long,Long>>> user_behaviors = user_behavior.mapToPair(new PairFunction<Tuple2<Long, Long>, Tuple2<Long, Long>, Long>() {
+        System.out.println("共有有效商品" + item_num.size() + "个。");
+
+        JavaPairRDD<Tuple2<Long, Long>, Long> ui_times = user_behavior.mapToPair(new PairFunction<Tuple2<Long, Long>, Tuple2<Long, Long>, Long>() {
             @Override
             public Tuple2<Tuple2<Long, Long>, Long> call(Tuple2<Long, Long> s) throws Exception {
-                return new Tuple2<Tuple2<Long, Long>, Long>(s,1L);
+                return new Tuple2<Tuple2<Long, Long>, Long>(s, 1L);
             }
         }).reduceByKey(new Function2<Long, Long, Long>() {
             @Override//user,item:times
             public Long call(Long l1, Long l2) throws Exception {
-                return l1+l2;
+                return l1 + l2;
             }
-        }).mapToPair(new PairFunction<Tuple2<Tuple2<Long, Long>, Long>, Long, Vector<Tuple2<Long, Long>>>() {
+        });
+        //生成user:vector<item,times>
+        JavaPairRDD<Long, Vector<Tuple2<Long, Long>>> user_behaviors = ui_times.mapToPair(new PairFunction<Tuple2<Tuple2<Long, Long>, Long>, Long, Vector<Tuple2<Long, Long>>>() {
             @Override//user:vector<item,times>
             public Tuple2<Long, Vector<Tuple2<Long, Long>>> call(Tuple2<Tuple2<Long, Long>, Long> s) throws Exception {
-                Vector<Tuple2<Long, Long>> x=new Vector<Tuple2<Long, Long>>();
-                x.add(new Tuple2<Long, Long>(s._1._2,s._2()));
-                return new Tuple2<Long, Vector<Tuple2<Long, Long>>>(s._1._1,x);
+                Vector<Tuple2<Long, Long>> x = new Vector<Tuple2<Long, Long>>();
+                x.add(new Tuple2<Long, Long>(s._1._2, s._2()));
+                return new Tuple2<Long, Vector<Tuple2<Long, Long>>>(s._1._1, x);
             }
         }).reduceByKey(new Function2<Vector<Tuple2<Long, Long>>, Vector<Tuple2<Long, Long>>, Vector<Tuple2<Long, Long>>>() {
             @Override
@@ -135,25 +144,40 @@ public final class item_based_CF {
         }).filter(new Function<Tuple2<Long, Vector<Tuple2<Long, Long>>>, Boolean>() {
             @Override//去除行为过多的用户
             public Boolean call(Tuple2<Long, Vector<Tuple2<Long, Long>>> s) throws Exception {
-                return s._2().size()<100;
+                return s._2().size() < 100;
             }
-        });
+        });//.repartition(200);
         System.out.println("形成了" + user_behaviors.count() + "个用户的行为数据。");
 
+        //考虑热门user打压后，每个item对应的行为次数
+        JavaPairRDD<Long, Double> item_times = ui_times.mapToPair(new PairFunction<Tuple2<Tuple2<Long, Long>, Long>, Long, Double>() {
+            @Override
+            public Tuple2<Long, Double> call(Tuple2<Tuple2<Long, Long>, Long> s) throws Exception {
+                return new Tuple2<Long, Double>(s._1._2, (s._2() * s._2()) / Math.log(1 + user_times.get(s._1._1)));//item,count;
+            }
+        }).reduceByKey(new Function2<Double, Double, Double>() {
+            @Override
+            public Double call(Double i1, Double i2) throws Exception {
+                return i1 + i2;
+            }
+        });
+//        ctx.broadcast(item_times);
+        System.out.println("共有商品" + item_times.count() + "个。");
+
         //生成item1：item2,score
-        JavaRDD<outfile_result> outfile=user_behaviors.flatMapToPair(new PairFlatMapFunction<Tuple2<Long, Vector<Tuple2<Long, Long>>>, Tuple2<Long, Long>, Double>() {
+        JavaRDD<outfile_result> outfile = user_behaviors.flatMapToPair(new PairFlatMapFunction<Tuple2<Long, Vector<Tuple2<Long, Long>>>, Tuple2<Long, Long>, Double>() {
             @Override
             public Iterable<Tuple2<Tuple2<Long, Long>, Double>> call(Tuple2<Long, Vector<Tuple2<Long, Long>>> ui) throws Exception {
-                Long user_id=ui._1;
+                Long user_id = ui._1;
                 Vector<Tuple2<Long, Long>> items = ui._2();
                 List<Tuple2<Tuple2<Long, Long>, Double>> output = new ArrayList<Tuple2<Tuple2<Long, Long>, Double>>();
                 for (int i1 = 0; i1 < items.size(); i1++) {
                     Tuple2<Long, Long> item1 = items.get(i1);
                     for (int i2 = i1 + 1; i2 < items.size(); i2++) {
                         Tuple2<Long, Long> item2 = items.get(i2);
-                        double score=item1._2*item2._2 / Math.log(1 + user_times.get(user_id));
-                        output.add(new Tuple2<Tuple2<Long, Long>, Double>(new Tuple2<Long, Long>(item1._1,item2._1),score));
-                        output.add(new Tuple2<Tuple2<Long, Long>, Double>(new Tuple2<Long, Long>(item2._1,item1._1),score));
+                        double score = item1._2 * item2._2 / Math.log(1 + user_times.get(user_id));
+                        output.add(new Tuple2<Tuple2<Long, Long>, Double>(new Tuple2<Long, Long>(item1._1, item2._1), score));
+                        output.add(new Tuple2<Tuple2<Long, Long>, Double>(new Tuple2<Long, Long>(item2._1, item1._1), score));
                     }
                 }
                 return output;
@@ -161,7 +185,7 @@ public final class item_based_CF {
         }).reduceByKey(new Function2<Double, Double, Double>() {
             @Override
             public Double call(Double d1, Double d2) throws Exception {
-                return d1+d2;
+                return d1 + d2;
             }
         }).mapToPair(new PairFunction<Tuple2<Tuple2<Long, Long>, Double>, Long, Tuple2<Long, Double>>() {
             @Override//生成i1:i2,score
@@ -171,37 +195,38 @@ public final class item_based_CF {
         }).join(item_times).mapToPair(new PairFunction<Tuple2<Long, Tuple2<Tuple2<Long, Double>, Double>>, Long, Tuple2<Long, Double>>() {
             @Override
             public Tuple2<Long, Tuple2<Long, Double>> call(Tuple2<Long, Tuple2<Tuple2<Long, Double>, Double>> s) throws Exception {
-                Long item1=s._1();
-                Long item2=s._2._1._1;
-                double score=s._2()._1()._2();
-                double item_weight=s._2._2;
-                return new Tuple2<Long, Tuple2<Long, Double>>(item2,new Tuple2<Long, Double>(item1,score/Math.sqrt(item_weight)));
+                Long item1 = s._1();
+                Long item2 = s._2._1._1;
+                double score = s._2()._1()._2();
+                double item_weight = s._2._2;
+                return new Tuple2<Long, Tuple2<Long, Double>>(item2, new Tuple2<Long, Double>(item1, score / Math.sqrt(item_weight)));
             }
         }).join(item_times).mapToPair(new PairFunction<Tuple2<Long, Tuple2<Tuple2<Long, Double>, Double>>, Long, Tuple2<Long, Double>>() {
             @Override
             public Tuple2<Long, Tuple2<Long, Double>> call(Tuple2<Long, Tuple2<Tuple2<Long, Double>, Double>> s) throws Exception {
-                Long item1=s._1();
-                Long item2=s._2._1._1;
-                double score=s._2()._1()._2();
-                double item_weight=s._2._2;
-                return new Tuple2<Long, Tuple2<Long, Double>>(item2,new Tuple2<Long, Double>(item1,score/Math.sqrt(item_weight)));
+                Long item1 = s._1();
+                Long item2 = s._2._1._1;
+                double score = s._2()._1()._2();
+                double item_weight = s._2._2;
+                return new Tuple2<Long, Tuple2<Long, Double>>(item2, new Tuple2<Long, Double>(item1, score / Math.sqrt(item_weight)));
             }
         }).groupByKey().map(new Function<Tuple2<Long, Iterable<Tuple2<Long, Double>>>, outfile_result>() {
             @Override
             public outfile_result call(Tuple2<Long, Iterable<Tuple2<Long, Double>>> tuple) throws Exception {
                 Long item1 = tuple._1();
-                Min_Heap heap = new Min_Heap(100);
-                for(Tuple2<Long, Double> tu:tuple._2()){
+                Min_Heap heap = new Min_Heap(10);
+                for (Tuple2<Long, Double> tu : tuple._2()) {
                     heap.add(String.valueOf(tu._1()), tu._2());
                 }
                 heap.sort();
                 Min_Heap.kv item_entry = heap.result[0];
-                String item_list = item_entry.key + ":" + item_entry.value;//rec_item_id,score
+                DecimalFormat format = new DecimalFormat("0.00000");
+                String item_list = item_entry.key + ":" + format.format(item_entry.value);//rec_item_id,score
                 for (int i = 1; i < heap.size; i++) {
                     item_entry = heap.result[i];
-                    item_list += ";" + item_entry.key + ":" + item_entry.value;
+                    item_list += ";" + item_entry.key + ":" + format.format(item_entry.value);
                 }
-                return new outfile_result(item1,item_list);
+                return new outfile_result(item1, item_list);
             }
         });
 
@@ -305,16 +330,27 @@ public final class item_based_CF {
 //        });
 
         //对结果进行排序并输出
-        System.out.println("生成i1i2pair共"+outfile.count()+"个");
+        System.out.println("生成i1i2pair共" + outfile.count() + "个");
+        int i = 0;
+        for (outfile_result show : outfile.collect()) {
+            if (item_num.containsKey(show.item_id)) {
+                System.out.println(show.item_id);
+                System.out.println("{" + show.item_list + "}");
+                i = i + 1;
+            }
+            if (i > 100) {
+                break;
+            }
+        }
 //        存入文件
 //        outfile.saveAsTextFile("/tmp/prm_output");
 
 //        存入hive
-        hiveCtx.sql("create external table if not exists prm14_result(item_id bigint,item_list string) partitioned by (ds string)");
-        DataFrame result_df=hiveCtx.createDataFrame(outfile, outfile_result.class);
-        System.out.println("生成的DataFrame："+result_df.count()+"行");
-        result_df.printSchema();
-        result_df.registerTempTable("temp_table1");
+//        hiveCtx.sql("create external table if not exists prm14_result(item_id bigint,item_list string) partitioned by (ds string)");
+//        DataFrame result_df=hiveCtx.createDataFrame(outfile, outfile_result.class);
+//        System.out.println("生成的DataFrame："+result_df.count()+"行");
+//        result_df.printSchema();
+//        result_df.registerTempTable("temp_table1");
 //        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 //        String ds=df.format(new Date());
 //        JavaRDD<String> re=hiveCtx.sql("select * from temp_table1 limit 10").toJavaRDD().map(new Function<Row, String>() {
