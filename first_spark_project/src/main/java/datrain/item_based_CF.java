@@ -69,7 +69,7 @@ public class item_based_CF {
         SQLContext sqlContext=new SQLContext(ctx);
         if(way.equals("hive")) {
             HiveContext hiveCtx = new HiveContext(ctx.sc());
-            DataFrame df = hiveCtx.table("select user_id,item_id,behavior_type form tmalldb.user_info");//读取数据，存入dataframe
+            DataFrame df = hiveCtx.sql("select user_id,item_id,behavior_type from tmalldb.user_info");//读取数据，存入dataframe
             df.printSchema();
             inputDF = sqlContext.createDataFrame(df.toJavaRDD(),gernerateStructType(structType));
         }
@@ -91,13 +91,13 @@ public class item_based_CF {
     public static void saveData(JavaSparkContext ctx,JavaRDD<Row> outfile,String structType){
         // 存入hive
         HiveContext hiveCtx = new HiveContext(ctx.sc());
-        hiveCtx.sql("create external table if not exists prm14_result(item_id bigint,item_list string) partitioned by (ds string)");
+        hiveCtx.sql("create external table if not exists tmalldb.prm14_result(item_id bigint,item_list string) partitioned by (ds string)");
         DataFrame result_df=hiveCtx.createDataFrame(outfile, gernerateStructType(structType));
         result_df.printSchema();
         result_df.registerTempTable("temp_table1");
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         String ds=df.format(new Date());
-        hiveCtx.sql("insert overwrite table prm14_result partition(ds='"+ds+"') select * from temp_table1");
+        hiveCtx.sql("insert overwrite table tmalldb.prm14_result partition(ds='"+ds+"') select * from temp_table1");
     }
 
     public static void main(String[] args) throws Exception {

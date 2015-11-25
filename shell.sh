@@ -48,13 +48,14 @@ select * from tmalldb.prm14_result limit 10;
 庞人铭一：
 输出结果一直无法成功写入Hive，故退而求其次研究生成DataFrame结构的输入输出。
 找到了官网关于DataFrame的Document：https://spark.apache.org/docs/latest/sql-programming-guide.html#dataframes
-发现按照官网示例用JavaBean生成DataFrame并不能成功，依据是inputDF.printSchema()发现只输出root，而没有如官网所示按JavaBean生成相应的结构。
+发现按照官网示例"Inferring the Schema Using Reflection"用JavaBean生成DataFrame并不能成功，依据是inputDF.printSchema()发现只输出root，而没有如官网所示按JavaBean生成相应的结构。
 庞人铭二：
 在生成DataFrame的结果集的过程中发现，输出结果一直无法成功写入Hive不是连接hive阶段出错，而是生成的DataFrame有问题。
 继续研究和尝试基于Java生成指定类型结构的DataFrame。
 根据张媛要求，生成了协同过滤算法结果的截图和说明。
+尝试将中间结果repartition成200个分区，发现对程序运行时间没有明显的影响。
 庞人铭三：
-成功生成指定类型结构的DataFrame，并将结果数据写入了Hive。
+根据官网生成DataFrame的另一个方案"Programmatically Specifying the Schema"成功生成指定类型结构的DataFrame，并将结果数据写入了Hive。
 重构优化协同过滤算法的代码，将输入输出接口封装成函数。
 
 
