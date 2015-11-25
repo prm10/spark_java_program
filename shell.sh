@@ -46,19 +46,16 @@ select * from tmalldb.prm14_result limit 10;
 
 
 庞人铭一：
-改进协同过滤算法的输入输出接口，根据团队目标，采用DataFrame与Hive进行数据交互成功，这样方便上下游的程序进行数据接口的定义和交互；
-熟悉Hive的操作，包括创建表和插入数据等操作，并在spark程序中执行sql语句成功。
+输出结果一直无法成功写入Hive，故退而求其次研究生成DataFrame结构的输入输出。
+找到了官网关于DataFrame的Document：https://spark.apache.org/docs/latest/sql-programming-guide.html#dataframes
+发现按照官网示例用JavaBean生成DataFrame并不能成功，依据是inputDF.printSchema()发现只输出root，而没有如官网所示按JavaBean生成相应的结构。
 庞人铭二：
-根据李滔博士建议，对spark程序的三个方面进行优化：
-1、将item的统计总和以broadcast的方式加载到所有worker，避免join操作；
-2、用vector替换string，加速i1i2pair的生成
-3、参考论文，对历史数据进行抽样后再给算法计算，减少运算量。
+在生成DataFrame的结果集的过程中发现，输出结果一直无法成功写入Hive不是连接hive阶段出错，而是生成的DataFrame有问题。
+继续研究和尝试基于Java生成指定类型结构的DataFrame。
+根据张媛要求，生成了协同过滤算法结果的截图和说明。
 庞人铭三：
-按上述要求继续优化代码：
-对于第1个优化方向，发现item的统计总和item_times太大，broadcast到所有worker会内存溢出（提示需要190G的空间，显然不够。。），只好作罢；
-对于第2个优化方向，已经优化，但是速度提升不明显；
-对于第3个优化方向，由于需要读论文+改代码，工作量较大，准备作为下周目标。
-此外，还写了一个将程序输入输出接口改为DataFrame的编程指南，已经上传至项目附件，供团队参考。
+成功生成指定类型结构的DataFrame，并将结果数据写入了Hive。
+重构优化协同过滤算法的代码，将输入输出接口封装成函数。
 
 
 public static class outfile_result implements Serializable {

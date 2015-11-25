@@ -1,10 +1,11 @@
 package datrain;
 
-
 import org.apache.spark.api.java.function.*;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.hive.HiveContext;
+import org.apache.spark.sql.types.*;
 import scala.Tuple2;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -17,56 +18,99 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.Date;
 import java.text.SimpleDateFormat;
+import org.apache.spark.sql.RowFactory;
 
 /**
  * Created by prm14 on 2015/10/20.
  */
 
-public final class item_based_CF {
-    private static final Pattern SPACE = Pattern.compile(",");
+public class item_based_CF {
 
-    public static class outfile_result implements Serializable {
-        public Long item_id;
-        public String item_list;
+//    public static class InputClass implements Serializable {
+//        private Long user_id;
+//        private Long item_id;
+//        private Long behavior_type;
+//
+//        InputClass(Long s1, Long s2, Long s3) {
+//            user_id = s1;
+//            item_id = s2;
+//            behavior_type=s3;
+//        }
+//    }
+//
+//    public static class OutputClass implements Serializable {
+//        public Long item_id;
+//        public String item_list;
+//
+//        OutputClass(Long i1, String list) {
+//            item_id = i1;
+//            item_list = list;
+//        }
+//    }
 
-        outfile_result(Long i1, String list) {
-            item_id = i1;
-            item_list = list;
+    public static StructType gernerateStructType(String s){
+        String[] kvs=s.split(";");
+        List<StructField> fields = new ArrayList<StructField>();
+        for(String x:kvs){
+            String[] kv=x.split(":");
+            String name=kv[0];
+            String dataType=kv[1];
+            if(dataType.equals("String")){
+                fields.add(DataTypes.createStructField(name,DataTypes.StringType,true));
+            }
+            if(dataType.equals("Long")){
+                fields.add(DataTypes.createStructField(name,DataTypes.LongType,true));
+            }
         }
+        return DataTypes.createStructType(fields);
+    }
+    public static DataFrame getData(JavaSparkContext ctx,String way,String[] args,String structType){
+        DataFrame inputDF=null;
+        SQLContext sqlContext=new SQLContext(ctx);
+        if(way.equals("hive")) {
+            HiveContext hiveCtx = new HiveContext(ctx.sc());
+            DataFrame df = hiveCtx.table("select user_id,item_id,behavior_type form tmalldb.user_info");//读取数据，存入dataframe
+            df.printSchema();
+            inputDF = sqlContext.createDataFrame(df.toJavaRDD(),gernerateStructType(structType));
+        }
+        else{
+            JavaRDD<Row> lines0=ctx.textFile(args[0], 1).map(new Function<String, Row>() {
+                @Override
+                public Row call(String s) throws Exception {
+                    String [] info=s.split(",");
+                    return RowFactory.create(info[0],info[1],info[2]);
+                }
+            });
+            inputDF = sqlContext.createDataFrame(lines0, gernerateStructType(structType));
+        }
+        inputDF.printSchema();
+        System.out.println("总共读入" + inputDF.count() + "行数据");
+        return inputDF;
+    }
+
+    public static void saveData(JavaSparkContext ctx,JavaRDD<Row> outfile,String structType){
+        // 存入hive
+        HiveContext hiveCtx = new HiveContext(ctx.sc());
+        hiveCtx.sql("create external table if not exists prm14_result(item_id bigint,item_list string) partitioned by (ds string)");
+        DataFrame result_df=hiveCtx.createDataFrame(outfile, gernerateStructType(structType));
+        result_df.printSchema();
+        result_df.registerTempTable("temp_table1");
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        String ds=df.format(new Date());
+        hiveCtx.sql("insert overwrite table prm14_result partition(ds='"+ds+"') select * from temp_table1");
     }
 
     public static void main(String[] args) throws Exception {
-
         if (args.length < 1) {
             System.err.println("Usage: item_based_CF <file>");
-            System.exit(1);
         }
 
         SparkConf sparkConf = new SparkConf().setAppName("prm_item_based_CF");
         sparkConf.set("spark.ui.port", "5555");
         JavaSparkContext ctx = new JavaSparkContext(sparkConf);
-        //从文本读入数据，测试用
-//        JavaRDD<String> lines0 = ctx.textFile(args[0], 1);
-//        JavaPairRDD<Long, Long> user_behavior=lines0.filter(new Function<String, Boolean>() {
-//            @Override
-//            public Boolean call(String s) throws Exception {
-//                String [] info=s.split(",");
-//                return Long.parseLong(info[2])==1L;
-//            }
-//        }).mapToPair(new PairFunction<String, Long, Long>() {
-//            @Override
-//            public Tuple2<Long, Long> call(String s) throws Exception {
-//                String [] info=s.split(",");
-//                return new Tuple2<Long, Long>(Long.parseLong(info[0]),Long.parseLong(info[1]));
-//            }
-//        });
-        //从hive读入数据
-        HiveContext hiveCtx = new HiveContext(ctx.sc());
-        hiveCtx.sql("use tmalldb");//指定数据库
-        DataFrame lines = hiveCtx.sql("select * from user_info");//读取数据，存入dataframe
-        System.out.println("总共读入" + lines.count() + "行数据");
-        //一次用户行为：将lines转为RDD格式，并通过判断用户行为类别保留浏览行为。读入的Hive数据转为RDD后为JavaRDD<Row>，具体Row操作见下面示例
-        JavaPairRDD<Long, Long> user_behavior = lines.toJavaRDD().filter(new Function<Row, Boolean>() {
+        String structType="user_id:String;item_id:String;behavior_type:String";
+        DataFrame inputDF=getData(ctx,"hive",args,structType);
+        JavaPairRDD<Long, Long> user_behavior=inputDF.toJavaRDD().filter(new Function<Row, Boolean>() {
             @Override
             public Boolean call(Row row) throws Exception {
                 return Long.parseLong(row.getString(2)) == 1L;
@@ -77,7 +121,6 @@ public final class item_based_CF {
                 return new Tuple2<Long, Long>(Long.parseLong(row.getString(0)), Long.parseLong(row.getString(1)));
             }
         });
-
         System.out.println("共有浏览行为" + user_behavior.count() + "条。");
 
         //每个user的行为次数
@@ -97,24 +140,24 @@ public final class item_based_CF {
         System.out.println("共有用户" + user_times.size() + "个。");
 
         //每个item的行为次数
-        final Map<Long, Long> item_num = user_behavior.mapToPair(new PairFunction<Tuple2<Long, Long>, Long, Long>() {
-            @Override
-            public Tuple2<Long, Long> call(Tuple2<Long, Long> s) throws Exception {
-                return new Tuple2<Long, Long>(s._2, 1L);
-            }
-        }).reduceByKey(new Function2<Long, Long, Long>() {
-            @Override
-            public Long call(Long l1, Long l2) throws Exception {
-                return l1 + l2;
-            }
-        }).filter(new Function<Tuple2<Long, Long>, Boolean>() {
-            @Override
-            public Boolean call(Tuple2<Long, Long> s) throws Exception {
-                return s._2 > 50L;
-            }
-        }).collectAsMap();
-
-        System.out.println("共有有效商品" + item_num.size() + "个。");
+//        final Map<Long, Long> item_num = user_behavior.mapToPair(new PairFunction<Tuple2<Long, Long>, Long, Long>() {
+//            @Override
+//            public Tuple2<Long, Long> call(Tuple2<Long, Long> s) throws Exception {
+//                return new Tuple2<Long, Long>(s._2, 1L);
+//            }
+//        }).reduceByKey(new Function2<Long, Long, Long>() {
+//            @Override
+//            public Long call(Long l1, Long l2) throws Exception {
+//                return l1 + l2;
+//            }
+//        }).filter(new Function<Tuple2<Long, Long>, Boolean>() {
+//            @Override
+//            public Boolean call(Tuple2<Long, Long> s) throws Exception {
+//                return s._2 > 50L;
+//            }
+//        }).collectAsMap();
+//
+//        System.out.println("共有有效商品" + item_num.size() + "个。");
 
         JavaPairRDD<Tuple2<Long, Long>, Long> ui_times = user_behavior.mapToPair(new PairFunction<Tuple2<Long, Long>, Tuple2<Long, Long>, Long>() {
             @Override
@@ -165,7 +208,7 @@ public final class item_based_CF {
         System.out.println("共有商品" + item_times.count() + "个。");
 
         //生成item1：item2,score
-        JavaRDD<outfile_result> outfile = user_behaviors.flatMapToPair(new PairFlatMapFunction<Tuple2<Long, Vector<Tuple2<Long, Long>>>, Tuple2<Long, Long>, Double>() {
+        JavaRDD<Row> outfile = user_behaviors.flatMapToPair(new PairFlatMapFunction<Tuple2<Long, Vector<Tuple2<Long, Long>>>, Tuple2<Long, Long>, Double>() {
             @Override
             public Iterable<Tuple2<Tuple2<Long, Long>, Double>> call(Tuple2<Long, Vector<Tuple2<Long, Long>>> ui) throws Exception {
                 Long user_id = ui._1;
@@ -210,11 +253,11 @@ public final class item_based_CF {
                 double item_weight = s._2._2;
                 return new Tuple2<Long, Tuple2<Long, Double>>(item2, new Tuple2<Long, Double>(item1, score / Math.sqrt(item_weight)));
             }
-        }).groupByKey().map(new Function<Tuple2<Long, Iterable<Tuple2<Long, Double>>>, outfile_result>() {
+        }).groupByKey().map(new Function<Tuple2<Long, Iterable<Tuple2<Long, Double>>>, Row>() {
             @Override
-            public outfile_result call(Tuple2<Long, Iterable<Tuple2<Long, Double>>> tuple) throws Exception {
+            public Row call(Tuple2<Long, Iterable<Tuple2<Long, Double>>> tuple) throws Exception {
                 Long item1 = tuple._1();
-                Min_Heap heap = new Min_Heap(10);
+                Min_Heap heap = new Min_Heap(100);
                 for (Tuple2<Long, Double> tu : tuple._2()) {
                     heap.add(String.valueOf(tu._1()), tu._2());
                 }
@@ -226,146 +269,22 @@ public final class item_based_CF {
                     item_entry = heap.result[i];
                     item_list += ";" + item_entry.key + ":" + format.format(item_entry.value);
                 }
-                return new outfile_result(item1, item_list);
+                return RowFactory.create(item1, item_list);
             }
         });
+        System.out.println("生成推荐列表共" + outfile.count() + "个");
 
-//        JavaRDD<outfile_result> outfile = user_behavior.reduceByKey(new Function2<Long, Long, Long>() {
-//            @Override//将每个用户的行为连接起来
-//            public String call(Long s1, Long s2) {
-//                return s1 + ";" + s2;
-//            }
-//        }).filter(new Function<Tuple2<Long, String>, Boolean>() {
-//            @Override//去除行为过多的用户
-//            public Boolean call(Tuple2<Long, String> s) throws Exception {
-//                return (s._2().split(";").length < 500);
-//            }
-//        }).flatMapToPair(new PairFlatMapFunction<Tuple2<Long, String>, Long, Tuple2<Long, Double>>() {
-//            @Override//生成i1i2pair
-//            public Iterable<Tuple2<Long, Tuple2<Long, Double>>> call(Tuple2<Long, String> ui) throws Exception {
-//                String[] items = ui._2().split(";");
-//                List<Tuple2<Long, Tuple2<Long, Double>>> output = new ArrayList<Tuple2<Long, Tuple2<Long, Double>>>();
-//                for (int i1 = 0; i1 < items.length; i1++) {
-//                    String[] item1 = items[i1].split(",");
-//                    for (int i2 = i1 + 1; i2 < items.length; i2++) {
-//                        String[] item2 = items[i2].split(",");
-//                        if (item2[0].equals(item1[0])) {
-//                            continue;
-//                        }
-//                        output.add(new Tuple2<Long, Tuple2<Long, Double>>(Long.parseLong(item1[0]), new Tuple2<Long, Double>(Long.parseLong(item2[0]), 1 / Math.log(1 + items.length))));
-//                        output.add(new Tuple2<Long, Tuple2<Long, Double>>(Long.parseLong(item2[0]), new Tuple2<Long, Double>(Long.parseLong(item1[0]), 1 / Math.log(1 + items.length))));
-//                    }
-//                }
-//                return output;
-//            }
-//        }).groupByKey().mapToPair(new PairFunction<Tuple2<Long, Iterable<Tuple2<Long, Double>>>, Long, HashMap<Long, Double>>() {
-//            @Override//将i1:i2缩紧为i1：i2_list
-//            public Tuple2<Long, HashMap<Long, Double>> call(Tuple2<Long, Iterable<Tuple2<Long, Double>>> s) throws Exception {
-//                HashMap<Long, Double> out = new HashMap<Long, Double>();
-//                Long s1 = s._1;
-//                for (Tuple2<Long, Double> s3 : s._2()) {
-//                    Long item2 = s3._1();
-//                    double score = s3._2();
-//                    if (out.containsKey(item2)) {
-//                        out.put(item2, out.get(item2) + score);
-//                    } else
-//                        out.put(item2, score);
-//                }
-//                return new Tuple2<Long, HashMap<Long, Double>>(s1, out);
-//            }
-//        }).join(item_times).flatMapToPair(new PairFlatMapFunction<Tuple2<Long, Tuple2<HashMap<Long, Double>, Double>>, Long, Tuple2<Long, Double>>() {
-//            @Override//除以i1的user_weight，并以i2:i1,score输出
-//            public Iterable<Tuple2<Long, Tuple2<Long, Double>>> call(Tuple2<Long, Tuple2<HashMap<Long, Double>, Double>> s) throws Exception {
-//                Long i1 = s._1();
-//                double weight=s._2._2;
-//                List<Tuple2<Long, Tuple2<Long, Double>>> out=new ArrayList<Tuple2<Long, Tuple2<Long, Double>>>();
-//                for(Map.Entry<Long, Double> h:s._2()._1().entrySet()){
-//                    out.add(new Tuple2<Long, Tuple2<Long, Double>>(h.getKey(),new Tuple2<Long, Double>(i1,h.getValue()/Math.sqrt(weight))));
-//                }
-//                return out;
-//            }
-//        }).groupByKey().mapToPair(new PairFunction<Tuple2<Long, Iterable<Tuple2<Long, Double>>>, Long, HashMap<Long, Double>>() {
-//            @Override//将i2:i1缩紧为i2：i1_list
-//            public Tuple2<Long, HashMap<Long, Double>> call(Tuple2<Long, Iterable<Tuple2<Long, Double>>> s) throws Exception {
-//                HashMap<Long, Double> out = new HashMap<Long, Double>();
-//                Long s1 = s._1;
-//                for (Tuple2<Long, Double> s3 : s._2()) {
-//                    Long item2 = s3._1();
-//                    double score = s3._2();
-//                    if (out.containsKey(item2)) {
-//                        out.put(item2, out.get(item2) + score);
-//                    } else
-//                        out.put(item2, score);
-//                }
-//                return new Tuple2<Long, HashMap<Long, Double>>(s1, out);
-//            }
-//        }).join(item_times).flatMapToPair(new PairFlatMapFunction<Tuple2<Long, Tuple2<HashMap<Long, Double>, Double>>, Long, Tuple2<Long, Double>>() {
-//            @Override//除以i2的user_weight，并以i1:i2,score输出
-//            public Iterable<Tuple2<Long, Tuple2<Long, Double>>> call(Tuple2<Long, Tuple2<HashMap<Long, Double>, Double>> s) throws Exception {
-//                Long i1 = s._1();
-//                double weight=s._2._2;
-//                List<Tuple2<Long, Tuple2<Long, Double>>> out=new ArrayList<Tuple2<Long, Tuple2<Long, Double>>>();
-//                for(Map.Entry<Long, Double> h:s._2()._1().entrySet()){
-//                    out.add(new Tuple2<Long, Tuple2<Long, Double>>(h.getKey(),new Tuple2<Long, Double>(i1,h.getValue()/Math.sqrt(weight))));
-//                }
-//                return out;
-//            }
-//        }).groupByKey().map(new Function<Tuple2<Long, Iterable<Tuple2<Long, Double>>>, outfile_result>() {
-//            @Override
-//            public outfile_result call(Tuple2<Long, Iterable<Tuple2<Long, Double>>> tuple) throws Exception {
-//                Long item1 = tuple._1();
-//                Min_Heap heap = new Min_Heap(100);
-//                for(Tuple2<Long, Double> tu:tuple._2()){
-//                    heap.add(String.valueOf(tu._1()), tu._2());
-//                }
-//                heap.sort();
-//                Min_Heap.kv item_entry = heap.result[0];
-//                String item_list = item_entry.key + ":" + item_entry.value;//rec_item_id,score
-//                for (int i = 1; i < heap.size; i++) {
-//                    item_entry = heap.result[i];
-//                    item_list += ";" + item_entry.key + ":" + item_entry.value;
-//                }
-//                return new outfile_result(item1,item_list);
-//            }
-//        });
+        structType="item_id:Long;item_list:String";
+        saveData(ctx,outfile,structType);
 
-        //对结果进行排序并输出
-        System.out.println("生成i1i2pair共" + outfile.count() + "个");
-        int i = 0;
-        for (outfile_result show : outfile.collect()) {
-            if (item_num.containsKey(show.item_id)) {
-                System.out.println(show.item_id);
-                System.out.println("{" + show.item_list + "}");
-                i = i + 1;
-            }
-            if (i > 100) {
-                break;
-            }
-        }
-//        存入文件
-//        outfile.saveAsTextFile("/tmp/prm_output");
-
-//        存入hive
-//        hiveCtx.sql("create external table if not exists prm14_result(item_id bigint,item_list string) partitioned by (ds string)");
-//        DataFrame result_df=hiveCtx.createDataFrame(outfile, outfile_result.class);
-//        System.out.println("生成的DataFrame："+result_df.count()+"行");
-//        result_df.printSchema();
-//        result_df.registerTempTable("temp_table1");
-//        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-//        String ds=df.format(new Date());
-//        JavaRDD<String> re=hiveCtx.sql("select * from temp_table1 limit 10").toJavaRDD().map(new Function<Row, String>() {
-//            @Override
-//            public String call(Row row) throws Exception {
-//                return String.valueOf(row.get(0))+row.getString(1);
+//        int i = 0;
+//        for (Row show : outfile.collect()) {
+//            System.out.println(show.getLong(0));
+//            System.out.println("{" + show.getString(1) + "}");
+//            i = i + 1;
+//            if (i > 100) {
+//                break;
 //            }
-//        });
-//        System.out.println(re.collect());
-//        hiveCtx.sql("insert overwrite table prm14_result partition(ds='"+ds+"') select * from temp_table1");
-
-//        List<outfile_result> output = outfile.collect();
-//        for (outfile_result tuple : output) {
-//            System.out.println("[" + tuple.item_id + "]");
-//            System.out.println(tuple.item_list);
 //        }
         ctx.stop();
     }
