@@ -1,126 +1,43 @@
-package datrain;
+package IBCF;
 
-import org.apache.spark.api.java.function.*;
-import org.apache.spark.sql.DataFrame;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SQLContext;
-import org.apache.spark.sql.hive.HiveContext;
-import org.apache.spark.sql.types.*;
-import scala.Tuple2;
-import org.apache.spark.SparkConf;
+/**
+ * Created by prm14 on 2015/12/5.
+ */
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
+import org.apache.spark.sql.SQLContext;
+import scala.Tuple2;
 
 import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.util.*;
-import java.util.regex.Pattern;
-import java.util.Date;
-import java.text.SimpleDateFormat;
-
-import org.apache.spark.sql.RowFactory;
 
 /**
  * Created by prm14 on 2015/10/20.
  */
 
-public class item_based_CF implements Serializable {
-    private SQLContext sqlContext = null;
-    private String inputFileName = null;
-    private String outputFileName = null;
-    private String inputStructType = "user_id:String;item_id:String;behavior_type:String";
-    private String outputStructType = "item_id:String;item_list:String";
-    private DataFrame inputDF = null;
-    private DataFrame outputDF = null;
-    private Long maxBehaviorTimes = null;
+public class IBCF implements Serializable {
+    private int maxBehaviorTimes=200;
+    private int maxCandidateSize=100;
 
-    public void setInputFileName(String s) {
-        inputFileName = s;
-    }
-
-    public void setOutputFileName(String s) {
-        outputFileName = s;
-    }
-
-    public void setInputStructType(String s) {
-        inputStructType = s;
-    }
-
-    public void setOutputStructType(String s) {
-        outputStructType = s;
-    }
-
-    public void setInputDF(JavaRDD<Row> s) {
-        inputDF = sqlContext.createDataFrame(s, generateStructType(inputStructType));
-    }
-
-    public void setOutputDF(JavaRDD<Row> s) {
-        outputDF = sqlContext.createDataFrame(s, generateStructType(outputStructType));
-    }
-
-    public void setMaxBehaviorTimes(Long s) {
+    public IBCF setMaxBehaviorTimes(int s) {
         maxBehaviorTimes = s;
+        return this;
     }
-
-    public StructType generateStructType(String s) {
-        String[] kvs = s.split(";");
-        List<StructField> fields = new ArrayList<StructField>();
-        for (String x : kvs) {
-            String[] kv = x.split(":");
-            String name = kv[0];
-            String dataType = kv[1];
-            if (dataType.equals("String")) {
-                fields.add(DataTypes.createStructField(name, DataTypes.StringType, true));
-            }
-            if (dataType.equals("Long")) {
-                fields.add(DataTypes.createStructField(name, DataTypes.LongType, true));
-            }
-        }
-        return DataTypes.createStructType(fields);
+    public IBCF setMaxCandidateSize(int s) {
+        maxCandidateSize = s;
+        return this;
     }
-
-    public void getInputDF(JavaSparkContext ctx, String way) {
-        if (way.equals("hive")) {
-            HiveContext hiveCtx = new HiveContext(ctx.sc());
-            DataFrame df = hiveCtx.sql("select user_id,item_id,behavior_type from " + inputFileName);//读取数据，存入dataframe
-            df.printSchema();
-            setInputDF(df.toJavaRDD());
-        } else {
-            JavaRDD<Row> lines0 = ctx.textFile(inputFileName, 1).map(new Function<String, Row>() {
-                @Override
-                public Row call(String s) throws Exception {
-                    String[] info = s.split(",");
-                    return RowFactory.create(info[0], info[1], info[2]);
-                }
-            });
-            setInputDF(lines0);
-        }
-        inputDF.printSchema();
-        System.out.println("总共读入" + inputDF.count() + "行数据");
-    }
-
-    public void saveOutputDF(JavaSparkContext ctx) {
-        // 存入hive
-        HiveContext hiveCtx = new HiveContext(ctx.sc());
-        hiveCtx.sql("create external table if not exists " + outputFileName + "(item_id string,item_list string) partitioned by (ds string)");
-        DataFrame df = hiveCtx.createDataFrame(outputDF.toJavaRDD(), generateStructType(outputStructType));
-        df.printSchema();
-        df.registerTempTable("temp_table1");
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        String ds = sdf.format(new Date());
-        hiveCtx.sql("insert overwrite table " + outputFileName + " partition(ds='" + ds + "') select * from temp_table1");
-    }
-
-    public void IBCF(JavaSparkContext ctx) {
-        sqlContext = new SQLContext(ctx);
-        getInputDF(ctx, "hive");
-        JavaPairRDD<Long, Long> user_behavior = inputDF.toJavaRDD().filter(new Function<Row, Boolean>() {
-            @Override
-            public Boolean call(Row row) throws Exception {
-                return Long.parseLong(row.getString(2)) == 1L;
-            }
-        }).mapToPair(new PairFunction<Row, Long, Long>() {
+    public DataFrame run(JavaSparkContext ctx,DataFrame inputDF) {
+        JavaPairRDD<Long, Long> user_behavior = inputDF.toJavaRDD().mapToPair(new PairFunction<Row, Long, Long>() {
             @Override
             public Tuple2<Long, Long> call(Row row) throws Exception {
                 return new Tuple2<Long, Long>(Long.parseLong(row.getString(0)), Long.parseLong(row.getString(1)));
@@ -242,7 +159,7 @@ public class item_based_CF implements Serializable {
             @Override
             public Row call(Tuple2<Long, Iterable<Tuple2<Long, Double>>> tuple) throws Exception {
                 Long item1 = tuple._1();
-                Min_Heap heap = new Min_Heap(100);
+                Min_Heap heap = new Min_Heap(maxCandidateSize);
                 for (Tuple2<Long, Double> tu : tuple._2()) {
                     heap.add(String.valueOf(tu._1()), tu._2());
                 }
@@ -258,29 +175,7 @@ public class item_based_CF implements Serializable {
             }
         });
         System.out.println("生成推荐列表共" + outfile.count() + "个");
-
-        setOutputDF(outfile);
-        saveOutputDF(ctx);
-        int i = 0;
-        for (Row show : outfile.collect()) {
-            System.out.println(show.getString(0));
-            System.out.println("{" + show.getString(1) + "}");
-            i = i + 1;
-            if (i > 20) {
-                break;
-            }
-        }
-    }
-
-    public static void main(String[] args) throws Exception {
-        SparkConf sparkConf = new SparkConf().setAppName("prm_item_based_CF");
-        sparkConf.set("spark.ui.port", "5555");
-        JavaSparkContext ctx = new JavaSparkContext(sparkConf);
-        item_based_CF ibcf = new item_based_CF();
-        ibcf.setInputFileName("tmalldb.user_info");
-        ibcf.setOutputFileName("tmalldb.prm_cf");
-        ibcf.setMaxBehaviorTimes(100L);
-        ibcf.IBCF(ctx);
-        ctx.stop();
+        SQLContext sqlcontext = new SQLContext(ctx.sc());
+        return sqlcontext.createDataFrame(outfile, IBCF_output.class);
     }
 }
