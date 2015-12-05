@@ -52,13 +52,14 @@ public class IBCF_test {
         IBCF ibcf = new IBCF()
                 .setMaxBehaviorTimes(maxBehaviorTimes)
                 .setMaxCandidateSize(maxCandidateSize);
-        DataFrame outputDF=ibcf.run(ctx,inputDF);
+        DataFrame outputDF=ibcf.run(ctx,sqlcontext,inputDF);
+//        outputDF.show();
         int i = 0;
         for (Row show : outputDF.toJavaRDD().collect()) {
-            System.out.println(show.getString(0));
-            System.out.println("{" + show.getString(1) + "}");
+            System.out.println(show.getAs("item").toString());
+            System.out.println("{" + show.getAs("itemList").toString() + "}");
             i = i + 1;
-            if (i > 20) {
+            if (i > 10) {
                 break;
             }
         }

@@ -10,6 +10,7 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
@@ -36,7 +37,7 @@ public class IBCF implements Serializable {
         maxCandidateSize = s;
         return this;
     }
-    public DataFrame run(JavaSparkContext ctx,DataFrame inputDF) {
+    public DataFrame run(JavaSparkContext ctx,SQLContext sqlcontext,DataFrame inputDF) {
         JavaPairRDD<Long, Long> user_behavior = inputDF.toJavaRDD().mapToPair(new PairFunction<Row, Long, Long>() {
             @Override
             public Tuple2<Long, Long> call(Row row) throws Exception {
@@ -57,7 +58,7 @@ public class IBCF implements Serializable {
                 return l1 + l2;
             }
         }).collectAsMap();
-        ctx.broadcast(user_times);
+        final Broadcast<Map<Long, Long>> utbc=ctx.broadcast(user_times);
 
         System.out.println("共有用户" + user_times.size() + "个。");
 
@@ -98,7 +99,7 @@ public class IBCF implements Serializable {
         JavaPairRDD<Long, Double> item_times = ui_times.mapToPair(new PairFunction<Tuple2<Tuple2<Long, Long>, Long>, Long, Double>() {
             @Override
             public Tuple2<Long, Double> call(Tuple2<Tuple2<Long, Long>, Long> s) throws Exception {
-                return new Tuple2<Long, Double>(s._1._2, (s._2() * s._2()) / Math.log(1 + user_times.get(s._1._1)));//item,count;
+                return new Tuple2<Long, Double>(s._1._2, (s._2() * s._2()) / Math.log(1 + utbc.getValue().get(s._1._1)));//item,count;
             }
         }).reduceByKey(new Function2<Double, Double, Double>() {
             @Override
@@ -110,7 +111,7 @@ public class IBCF implements Serializable {
         System.out.println("共有商品" + item_times.count() + "个。");
 
         //生成item1：item2,score
-        JavaRDD<Row> outfile = user_behaviors.flatMapToPair(new PairFlatMapFunction<Tuple2<Long, Vector<Tuple2<Long, Long>>>, Tuple2<Long, Long>, Double>() {
+        JavaRDD<IBCF_output> outfile = user_behaviors.flatMapToPair(new PairFlatMapFunction<Tuple2<Long, Vector<Tuple2<Long, Long>>>, Tuple2<Long, Long>, Double>() {
             @Override
             public Iterable<Tuple2<Tuple2<Long, Long>, Double>> call(Tuple2<Long, Vector<Tuple2<Long, Long>>> ui) throws Exception {
                 Long user_id = ui._1;
@@ -155,9 +156,9 @@ public class IBCF implements Serializable {
                 double item_weight = s._2._2;
                 return new Tuple2<Long, Tuple2<Long, Double>>(item2, new Tuple2<Long, Double>(item1, score / Math.sqrt(item_weight)));
             }
-        }).groupByKey().map(new Function<Tuple2<Long, Iterable<Tuple2<Long, Double>>>, Row>() {
+        }).groupByKey().map(new Function<Tuple2<Long, Iterable<Tuple2<Long, Double>>>, IBCF_output>() {
             @Override
-            public Row call(Tuple2<Long, Iterable<Tuple2<Long, Double>>> tuple) throws Exception {
+            public IBCF_output call(Tuple2<Long, Iterable<Tuple2<Long, Double>>> tuple) throws Exception {
                 Long item1 = tuple._1();
                 Min_Heap heap = new Min_Heap(maxCandidateSize);
                 for (Tuple2<Long, Double> tu : tuple._2()) {
@@ -171,11 +172,10 @@ public class IBCF implements Serializable {
                     item_entry = heap.result[i];
                     item_list += ";" + item_entry.key + ":" + format.format(item_entry.value);
                 }
-                return RowFactory.create(String.valueOf(item1), item_list);
+                return new IBCF_output().setItem(String.valueOf(item1)).setItemList(item_list);
             }
         });
         System.out.println("生成推荐列表共" + outfile.count() + "个");
-        SQLContext sqlcontext = new SQLContext(ctx.sc());
         return sqlcontext.createDataFrame(outfile, IBCF_output.class);
     }
 }
