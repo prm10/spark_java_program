@@ -121,7 +121,7 @@ public class IBCF implements Serializable {
                     Tuple2<Long, Long> item1 = items.get(i1);
                     for (int i2 = i1 + 1; i2 < items.size(); i2++) {
                         Tuple2<Long, Long> item2 = items.get(i2);
-                        double score = item1._2 * item2._2 / Math.log(1 + user_times.get(user_id));
+                        double score = item1._2 * item2._2 / Math.log(1 + utbc.getValue().get(user_id));
                         output.add(new Tuple2<Tuple2<Long, Long>, Double>(new Tuple2<Long, Long>(item1._1, item2._1), score));
                         output.add(new Tuple2<Tuple2<Long, Long>, Double>(new Tuple2<Long, Long>(item2._1, item1._1), score));
                     }

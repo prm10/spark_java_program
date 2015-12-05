@@ -1,6 +1,5 @@
 scp ~/IBCF-1.0.0.jar root@hadoopserver3:/home
 ssh root\@hadoopserver3
-su hive
 cd /usr/hdp/2.3.2.0-2950/spark
 ./bin/spark-submit \
 --class "IBCF.IBCF_test" \
@@ -11,7 +10,7 @@ cd /usr/hdp/2.3.2.0-2950/spark
 
 
 
-
+su hive
 
 ./bin/spark-submit --class "datrain.item_based_CF" --master yarn --executor-memory 20G --total-executor-cores 48 /home/prm14-1.0.0.jar /tmp/prm_user1
 

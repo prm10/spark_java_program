@@ -15,7 +15,7 @@ public class IBCF_test {
 
     public static void main(String[] args) throws Exception {//args:inputFileName,behaviorType,maxBehaviorTimes,maxCandidateSize
         if (args.length < 4) {
-            System.err.println("输入参数不够，应该至少给出：输入数据文件名、行为类型、输入数据中用户最多行为次数、输出数据中候选集最多元素个数");
+            System.err.println("输入参数不够，应该给出4个参数：输入数据文件名、行为类型、输入数据中用户最多行为次数、输出数据中候选集最多元素个数");
         }
         String inputFileName=args[0];
         final String behaviorType=args[1];
@@ -53,7 +53,7 @@ public class IBCF_test {
                 .setMaxBehaviorTimes(maxBehaviorTimes)
                 .setMaxCandidateSize(maxCandidateSize);
         DataFrame outputDF=ibcf.run(ctx,sqlcontext,inputDF);
-//        outputDF.show();
+        outputDF.show();
         int i = 0;
         for (Row show : outputDF.toJavaRDD().collect()) {
             System.out.println(show.getAs("item").toString());
