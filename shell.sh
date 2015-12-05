@@ -2,7 +2,12 @@ scp ~/IBCF-1.0.0.jar root@hadoopserver3:/home
 ssh root\@hadoopserver3
 su hive
 cd /usr/hdp/2.3.2.0-2950/spark
-./bin/spark-submit --class "IBCF.IBCF_test" --master yarn --executor-memory 20G --total-executor-cores 48 /home/IBCF-1.0.0.jar /tmp/prm_user1
+./bin/spark-submit \
+--class "IBCF.IBCF_test" \
+--master yarn --executor-memory 20G \
+--total-executor-cores 48 \
+/home/IBCF-1.0.0.jar \
+/tmp/prm_user1 1 100 50
 
 
 

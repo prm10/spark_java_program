@@ -41,7 +41,7 @@ public class IBCF implements Serializable {
         JavaPairRDD<Long, Long> user_behavior = inputDF.toJavaRDD().mapToPair(new PairFunction<Row, Long, Long>() {
             @Override
             public Tuple2<Long, Long> call(Row row) throws Exception {
-                return new Tuple2<Long, Long>(Long.parseLong(row.getString(0)), Long.parseLong(row.getString(1)));
+                return new Tuple2<Long, Long>(Long.parseLong(row.getAs("user").toString()), Long.parseLong(row.getAs("item").toString()));
             }
         });
         System.out.println("共有浏览行为" + user_behavior.count() + "条。");

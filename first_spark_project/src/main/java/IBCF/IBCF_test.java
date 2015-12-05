@@ -29,7 +29,7 @@ public class IBCF_test {
 
         JavaRDD<String> lines1 = ctx.textFile(inputFileName, 1);
 
-        System.out.println(lines1.count() + " lines read in");
+        System.out.println("总共读取了"+lines1.count() + "条数据");
         //过滤出某种行为的数据
         JavaRDD<String> lines2 = lines1.filter(new Function<String, Boolean>() {
             @Override
