@@ -7,6 +7,10 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
+import redis.clients.jedis.Jedis;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by prm14 on 2015/12/5.
@@ -63,6 +67,24 @@ public class IBCF_test {
                 break;
             }
         }
+
+        ////////////////////redis连接与操作//////////////////////////////
+        //连接redis
+        Jedis jedis = new Jedis("192.168.1.30",6379);
+        //以<item,itemlist>的键值对存储
+        Map<String, String> resultmap = new HashMap<String, String>();
+        //DataFrame转换为JavaRDD格式数据
+        JavaRDD<Row> resultrdd = outputDF.toJavaRDD();
+        for (Row r : resultrdd.collect()) {
+            String item = r.getAs("item").toString();
+            String itemList = r.getAs("itemList").toString();
+            resultmap.put(item, itemList);
+        }
+        System.out.println("resultmap size: " + resultmap.size());
+        //将结果存入redis中
+        jedis.hmset("IBCF_resultlist",resultmap);
+        ////////////////////redis连接与操作//////////////////////////////
         ctx.stop();
     }
 }
+
