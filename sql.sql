@@ -45,6 +45,24 @@ select dateStr,num from
 where num>100
 order by dateStr
 
+--高炉3
+select dateStr,num from
+(
+	select dateStr,count(*) as num
+	from 
+	(
+		SELECT CONVERT(varchar(100), [时间], 23) as dateStr
+		FROM [GL3].[dbo].[ZCS3]
+		where 热风压力<0.28
+			or 冷风流量<15
+			or 顶温东北>400
+			or 富氧流量<4000
+	) A
+	group by dateStr
+) B
+where num>100
+order by dateStr
+
 
 select min(时间) as mint,max(时间) as maxt 
 from [GL6].[dbo].[ZCS6]
