@@ -23,8 +23,8 @@ import org.apache.spark.sql.SQLContext;
 public class PrefixSpan_test {
 
     public static void main(String[] args) throws Exception {
-        String inputFileName=args[0];
-        final String behaviorType=args[1];
+        String inputFileName = args[0];
+        final String behaviorType = args[1];
 
         SparkConf sparkConf = new SparkConf().setAppName("PrefixSpan");
         sparkConf.set("spark.ui.port", "5555");
@@ -33,12 +33,12 @@ public class PrefixSpan_test {
 
         JavaRDD<String> lines1 = ctx.textFile(inputFileName, 1);
 
-        System.out.println("总共读取了"+lines1.count() + "条数据");
+        System.out.println("总共读取了" + lines1.count() + "条数据");
         //过滤出某种行为的数据
         JavaRDD<String> lines2 = lines1.filter(new Function<String, Boolean>() {
             @Override
             public Boolean call(String s) throws Exception {
-                return s.split(",")[2].equals(behaviorType);
+                return !(s.split(",")[2].equals("0")||s.split(",")[2].equals("浏览数"));
             }
         });
 
@@ -47,14 +47,7 @@ public class PrefixSpan_test {
             @Override
             public PrefixSpan_input call(String s) {
                 String[] b = s.split(",");
-                SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH");//小写的mm表示的是分钟
-                try{
-                    Date behaviorTime=sdf.parse(b[5]);
-                    return new PrefixSpan_input().setUser(b[0]).setItem(b[1]).setBehaviorTime(behaviorTime);
-                }
-                catch (ParseException e) {
-                    e.printStackTrace();
-                }
+                return new PrefixSpan_input().setUser(b[0]).setItem(b[1]).setBehaviorTime(b[5]);
             }
         });
 
@@ -67,6 +60,7 @@ public class PrefixSpan_test {
                 Arrays.asList(Arrays.asList(1, 2), Arrays.asList(5)),
                 Arrays.asList(Arrays.asList(6))
         ), 2);
+
         PrefixSpan prefixSpan = new PrefixSpan()
                 .setMinSupport(0.5)
                 .setMaxPatternLength(5);

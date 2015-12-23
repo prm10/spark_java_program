@@ -1,14 +1,16 @@
-scp ~/IBCF-1.0.0.jar root@hadoopserver3:/home
+scp ~/PrefixSpan-1.0.0-jar-with-dependencies.jar root@hadoopserver3:/home
 ssh root\@hadoopserver3
 cd /usr/hdp/2.3.2.0-2950/spark
 ./bin/spark-submit \
 --class "IBCF.IBCF_test" \
 --master yarn --executor-memory 20G \
 --total-executor-cores 48 \
-/home/IBCF-1.0.0.jar \
-/tmp/prm_user1 1 100 50
+/home/PrefixSpan-1.0.0-jar-with-dependencies.jar \
+/tmp/购物车数据.csv 1 100 100
 
-
+HashMap<String, String> options = new HashMap<String, String>();
+options.put("header", "true");
+options.put("path", "cars.csv");
 
 su hive
 

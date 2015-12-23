@@ -1,7 +1,6 @@
 package PrefixSpan;
 
 import java.io.Serializable;
-import java.util.Date;
 
 /**
  * Created by prm14 on 2015/12/16.
@@ -9,7 +8,7 @@ import java.util.Date;
 public class PrefixSpan_input implements Serializable {
     private String user;
     private String item;
-    private Date behaviorTime;
+    private String behaviorTime;
     public PrefixSpan_input setUser(String s){
         user=s;
         return this;
@@ -18,7 +17,7 @@ public class PrefixSpan_input implements Serializable {
         item=s;
         return this;
     }
-    public PrefixSpan_input setBehaviorTime(Date s){
+    public PrefixSpan_input setBehaviorTime(String s){
         behaviorTime=s;
         return this;
     }
@@ -28,7 +27,7 @@ public class PrefixSpan_input implements Serializable {
     public String getItem(){
         return item;
     }
-    public Date getBehaviorTime(){
+    public String getBehaviorTime(){
         return behaviorTime;
     }
 }
