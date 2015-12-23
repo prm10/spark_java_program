@@ -78,11 +78,12 @@ org\apache\spark\examples\mllib\JavaDecisionTree$6.class
 IBCF\IBCF$4.class
 org\apache\spark\examples\mllib\JavaDecisionTree$4.class
 org\apache\spark\examples\JavaHdfsLR$DataPoint.class
+org\apache\spark\examples\sql\JavaSparkSQL.class
 org\apache\spark\examples\JavaSparkPi$2.class
 org\apache\spark\examples\mllib\JavaLDAExample$2.class
-org\apache\spark\examples\sql\JavaSparkSQL.class
 org\apache\spark\examples\mllib\JavaDecisionTree$2.class
 org\apache\spark\examples\sql\JavaSparkSQL$1.class
+IBCF\IBCF_test$5.class
 PrefixSpan\PrefixSpan_test$2.class
 org\apache\spark\examples\mllib\JavaRandomForestExample$3.class
 org\apache\spark\examples\JavaHdfsLR$ParsePoint.class

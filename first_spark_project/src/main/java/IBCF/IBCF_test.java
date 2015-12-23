@@ -1,5 +1,7 @@
 package IBCF;
 
+import org.apache.hadoop.fs.Hdfs;
+import org.apache.hadoop.fs.Path;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -12,6 +14,7 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import redis.clients.jedis.Jedis;
 import scala.Tuple2;
+import org.apache.hadoop.fs.FileSystem;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -68,6 +71,14 @@ public class IBCF_test {
         DataFrame outputDF = ibcf.run(ctx, sqlcontext, inputDF);
         outputDF.show();
 
+        //存为csv格式
+        JavaPairRDD<String,String> resultF=outputDF.toJavaRDD().mapToPair(new PairFunction<Row, String, String>() {
+            @Override
+            public Tuple2<String, String> call(Row row) throws Exception {
+                return new Tuple2<String, String>(row.getAs("item").toString(),row.getAs("itemList").toString());
+            }
+        }).repartition(1);
+
         Map<String,String> sku2name=lines2.mapToPair(new PairFunction<String, String, String>() {
             @Override
             public Tuple2<String, String> call(String s) throws Exception {
@@ -82,14 +93,16 @@ public class IBCF_test {
             public Tuple2<String, String> call(Row row) throws Exception {
                 String item=row.getAs("item").toString();
                 String[] itemList=row.getAs("itemList").toString().split(";");
-                String result="";
+                String result="\n推荐列表：\n";
+                int i1=1;
                 for(String i2:itemList){
                     String[] itemScore=i2.split(":");
-                    result+=s2n.getValue().get(itemScore[0])+":"+itemScore[1]+";";
+                    result+="["+i1+":"+s2n.getValue().get(itemScore[0])+":"+itemScore[1]+"];\n";
+                    i1++;
                 }
                 return new Tuple2<String, String>(s2n.getValue().get(item),result);
             }
-        });
+        }).repartition(1);
         int i = 0;
 //        for (Row show : outputDF.toJavaRDD().collect()) {
 //            System.out.println(show.getAs("item").toString());
@@ -100,13 +113,26 @@ public class IBCF_test {
 //            }
 //        }
         for (Tuple2<String,String> s:n2n.collect()){
-            System.out.println(s._1);
-            System.out.println("{" + s._2 + "}");
+            System.out.println(s._1+s._2+"\n");
             i = i + 1;
-            if (i > 100) {
+            if (i > 10) {
                 break;
             }
         }
+
+        FileSystem hdfs=FileSystem.get(
+                new java.net.URI("hdfs://mycluster"),
+                new org.apache.hadoop.conf.Configuration());
+        Path p=new Path("hdfs://mycluster/tmp/IBCF");
+        if(hdfs.exists(p)){
+            hdfs.delete(p,true);
+        }
+        p=new Path("hdfs://mycluster/tmp/IBCF_name");
+        if(hdfs.exists(p)){
+            hdfs.delete(p,true);
+        }
+        resultF.saveAsTextFile("/tmp/IBCF");
+        n2n.saveAsTextFile("/tmp/IBCF_name");
 
         ////////////////////redis连接与操作//////////////////////////////
 //        //连接redis

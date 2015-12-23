@@ -6,7 +6,7 @@ cd /usr/hdp/2.3.2.0-2950/spark
 --master yarn --executor-memory 20G \
 --total-executor-cores 48 \
 /home/PrefixSpan-1.0.0-jar-with-dependencies.jar \
-/tmp/购物车数据.csv 1 100 100
+/tmp/shoppingcar.csv 1 1000 100
 
 HashMap<String, String> options = new HashMap<String, String>();
 options.put("header", "true");
@@ -29,9 +29,8 @@ spark-submit --class "org.apache.spark.examples.JavaWordCount" --master local[4]
 spark-submit --class "datrain.item_based_CF" --master local[4] --executor-memory 2G ~/Downloads/prm14-1.0.0.jar ~/Downloads/behavior.txt
 spark-submit --class "datrain.item_based_CF" --master local[4] prm14-1.0.0.jar behavior.txt
 
-http://sparkbj38080.tunnel.yottabig.com:8000/
 
-http://sparkbj.tunnel.yottabig.com:8000/
+http://yarn.tunnel.yottabig.com:8000/cluster
 
 yarn application -kill application_1447840502449_0012
 
