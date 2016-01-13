@@ -6,7 +6,9 @@ cd /usr/hdp/2.3.2.0-2950/spark
 --master yarn --executor-memory 20G \
 --total-executor-cores 48 \
 /home/PrefixSpan-1.0.0-jar-with-dependencies.jar \
-/tmp/shoppingcar.csv 1 1000 100
+leyou_db.joint_feat_tb 1 1000 100
+
+/tmp/shoppingcar.csv
 
 HashMap<String, String> options = new HashMap<String, String>();
 options.put("header", "true");

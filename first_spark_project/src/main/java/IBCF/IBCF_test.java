@@ -1,7 +1,5 @@
 package IBCF;
 
-import org.apache.hadoop.fs.Hdfs;
-import org.apache.hadoop.fs.Path;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -14,15 +12,17 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import redis.clients.jedis.Jedis;
 import scala.Tuple2;
-import org.apache.hadoop.fs.FileSystem;
 
-import java.util.HashMap;
-import java.util.Map;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
  * Created by prm14 on 2015/12/5.
  */
 public class IBCF_test {
+
 
     public static void main(String[] args) throws Exception {//args:inputFileName,behaviorType,maxBehaviorTimes,maxCandidateSize
         if (args.length < 4) {
@@ -38,28 +38,44 @@ public class IBCF_test {
         JavaSparkContext ctx = new JavaSparkContext(sparkConf);
         SQLContext sqlcontext = new SQLContext(ctx.sc());
 
-        HashMap<String, String> options = new HashMap<String, String>();
-        options.put("header", "true");
-        options.put("path", inputFileName);
+//        HashMap<String, String> options = new HashMap<String, String>();
+//        options.put("header", "true");
+//        options.put("path", inputFileName);
 
 
-        JavaRDD<String> lines1 = ctx.textFile(inputFileName, 1);
-
-        System.out.println("总共读取了" + lines1.count() + "条数据");
+//        JavaRDD<String> lines1 = ctx.textFile(inputFileName, 1);
+//        System.out.println("总共读取了" + lines1.count() + "条数据");
         //过滤出某种行为的数据
-        JavaRDD<String> lines2 = lines1.filter(new Function<String, Boolean>() {
-            @Override
-            public Boolean call(String s) throws Exception {
-                return !(s.split(",").length<8||s.split(",")[2].equals("0")||s.split(",")[2].equals("浏览数"));
-            }
-        });
+//        JavaRDD<String> lines2 = lines1.filter(new Function<String, Boolean>() {
+//            @Override
+//            public Boolean call(String s) throws Exception {
+////                return !(s.split(",").length<8||s.split(",")[2].equals("0")||s.split(",")[2].equals("浏览数"));
+//                return !(s.split(",").length<8||s.split(",")[3].equals("0"));
+//            }
+//        });
+
+        DataFrame df=IBCF_method.getData(ctx,inputFileName);
+        DataFrame lines2=df.filter(df.col("buy_cnt").gt(0))
+                .select(df.col("user_id"), df.col("sku"), df.col("dt"),df.col("item_name"));
+        DataFrame trainSet=lines2.filter(lines2.col("dt").lt("\"20151101\""));
+        DataFrame testSet=lines2.filter(lines2.col("dt").gt("\"20151031\""));
+
+
+
+        System.out.println("剔除异常数据后还剩" + lines2.count() + "条数据，分为了训练集"+trainSet.count()+"条，测试集"+testSet.count()+"条");
 
         //处理数据，生成<user,item>对的数据集，并以IBCF_input的javabean类对象格式存放，方便后面转换为dataFrame格式
-        JavaRDD<IBCF_input> input = lines2.map(new Function<String, IBCF_input>() {
+//        JavaRDD<IBCF_input> input = lines2.map(new Function<String, IBCF_input>() {
+//            @Override
+//            public IBCF_input call(String s) {
+//                String[] b = s.split(",");
+//                return new IBCF_input().setUser(b[0]).setItem(b[1]);
+//            }
+//        });
+        JavaRDD<IBCF_input> input = trainSet.toJavaRDD().map(new Function<Row, IBCF_input>() {
             @Override
-            public IBCF_input call(String s) {
-                String[] b = s.split(",");
-                return new IBCF_input().setUser(b[0]).setItem(b[1]);
+            public IBCF_input call(Row s) {
+                return new IBCF_input().setUser(s.getAs("user_id").toString()).setItem(s.getAs("sku").toString());
             }
         });
 
@@ -71,7 +87,6 @@ public class IBCF_test {
         DataFrame outputDF = ibcf.run(ctx, sqlcontext, inputDF);
         outputDF.show();
 
-        //存为csv格式
         JavaPairRDD<String,String> resultF=outputDF.toJavaRDD().mapToPair(new PairFunction<Row, String, String>() {
             @Override
             public Tuple2<String, String> call(Row row) throws Exception {
@@ -79,11 +94,11 @@ public class IBCF_test {
             }
         }).repartition(1);
 
-        Map<String,String> sku2name=lines2.mapToPair(new PairFunction<String, String, String>() {
+        Map<String,String> sku2name=lines2.toJavaRDD().mapToPair(new PairFunction<Row, String, String>() {
             @Override
-            public Tuple2<String, String> call(String s) throws Exception {
-                String[] b=s.split(",");
-                return new Tuple2<String, String>(b[1],b[5]);
+            public Tuple2<String, String> call(Row s) throws Exception {
+//                String[] b = s.split(",");
+                return new Tuple2<String, String>(s.getAs("sku").toString(), s.getAs("item_name").toString());
             }
         }).collectAsMap();
         final Broadcast<Map<String, String>> s2n=ctx.broadcast(sku2name);
@@ -104,14 +119,6 @@ public class IBCF_test {
             }
         }).repartition(1);
         int i = 0;
-//        for (Row show : outputDF.toJavaRDD().collect()) {
-//            System.out.println(show.getAs("item").toString());
-//            System.out.println("{" + show.getAs("itemList").toString() + "}");
-//            i = i + 1;
-//            if (i > 10) {
-//                break;
-//            }
-//        }
         for (Tuple2<String,String> s:n2n.collect()){
             System.out.println(s._1+s._2+"\n");
             i = i + 1;
@@ -120,19 +127,9 @@ public class IBCF_test {
             }
         }
 
-        FileSystem hdfs=FileSystem.get(
-                new java.net.URI("hdfs://mycluster"),
-                new org.apache.hadoop.conf.Configuration());
-        Path p=new Path("hdfs://mycluster/tmp/IBCF");
-        if(hdfs.exists(p)){
-            hdfs.delete(p,true);
-        }
-        p=new Path("hdfs://mycluster/tmp/IBCF_name");
-        if(hdfs.exists(p)){
-            hdfs.delete(p,true);
-        }
-        resultF.saveAsTextFile("/tmp/IBCF");
-        n2n.saveAsTextFile("/tmp/IBCF_name");
+//        IBCF_method.saveAsTextFile(resultF,n2n);
+        IBCF_method.saveToHive(ctx, IBCF_method.generateRow(resultF), "item_id:String;item_list:String", "leyou_db.ibcf_result_id_6to10");
+        IBCF_method.saveToHive(ctx, IBCF_method.generateRow(n2n), "item_id:String;item_list:String", "leyou_db.ibcf_result_name_6to10");
 
         ////////////////////redis连接与操作//////////////////////////////
 //        //连接redis
