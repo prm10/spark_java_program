@@ -19,41 +19,41 @@ import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import scala.Tuple2;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by prm14 on 2016/1/4.
  */
 public class IBCF_method {
 
-    public static DataFrame getData(JavaSparkContext ctx,String tableName){
+    public static DataFrame getData(JavaSparkContext ctx, String tableName) {
         HiveContext hiveCtx = new HiveContext(ctx.sc());
-        DataFrame inputDF = hiveCtx.sql("select * from "+tableName);//读取数据，存入dataframe
+        DataFrame inputDF = hiveCtx.sql("select * from " + tableName);//读取数据，存入dataframe
         inputDF.printSchema();
-        System.out.println("总共读入" + inputDF.count() + "行数据");
+        System.out.println("---------------------------------------------------------------");
+        System.out.println("read table " + tableName + ": " + inputDF.count() + " lines");
+        System.out.println("---------------------------------------------------------------");
         return inputDF;
     }
 
-    public static StructType gernerateStructType(String s){
-        String[] kvs=s.split(";");
+    public static StructType gernerateStructType(String s) {
+        String[] kvs = s.split(";");
         List<StructField> fields = new ArrayList<StructField>();
-        for(String x:kvs){
-            String[] kv=x.split(":");
-            String name=kv[0];
-            String dataType=kv[1];
-            if(dataType.equals("String")){
+        for (String x : kvs) {
+            String[] kv = x.split(":");
+            String name = kv[0];
+            String dataType = kv[1];
+            if (dataType.equals("String")) {
                 fields.add(DataTypes.createStructField(name, DataTypes.StringType, true));
             }
-            if(dataType.equals("Long")){
-                fields.add(DataTypes.createStructField(name,DataTypes.LongType,true));
+            if (dataType.equals("Long")) {
+                fields.add(DataTypes.createStructField(name, DataTypes.LongType, true));
             }
         }
         return DataTypes.createStructType(fields);
     }
 
-    public static JavaRDD<Row> generateRow(JavaPairRDD<String,String> x){
+    public static JavaRDD<Row> generateRow(JavaPairRDD<String, String> x) {
         return x.map(new Function<Tuple2<String, String>, Row>() {
             @Override
             public Row call(Tuple2<String, String> s) throws Exception {
@@ -62,38 +62,38 @@ public class IBCF_method {
         });
     }
 
-    public static void saveToHive(JavaSparkContext ctx,JavaRDD<Row> outfile,String structType,String tableName){
+    public static void saveToHive(JavaSparkContext ctx, JavaRDD<Row> outfile, String structType, String tableName) {
         HiveContext hiveCtx = new HiveContext(ctx.sc());
-        DataFrame result_df=hiveCtx.createDataFrame(outfile, gernerateStructType(structType));
+        DataFrame result_df = hiveCtx.createDataFrame(outfile, gernerateStructType(structType));
         result_df.printSchema();
         result_df.registerTempTable("temp_table1");
-        hiveCtx.sql("drop table if exists "+tableName);
-        hiveCtx.sql("create external table if not exists "+tableName+" as select * from temp_table1");
+        hiveCtx.sql("drop table if exists " + tableName);
+        hiveCtx.sql("create external table if not exists " + tableName + " as select * from temp_table1");
     }
 
-    public static void saveAsTextFile(JavaPairRDD<String,String> resultF,JavaPairRDD<String,String> n2n) throws Exception {
+    public static void saveAsTextFile(JavaPairRDD<String, String> resultF, JavaPairRDD<String, String> n2n) throws Exception {
         //存为csv格式
-        FileSystem hdfs=FileSystem.get(
+        FileSystem hdfs = FileSystem.get(
                 new java.net.URI("hdfs://mycluster"),
                 new org.apache.hadoop.conf.Configuration());
-        Path p=new Path("hdfs://mycluster/tmp/IBCF");
-        if(hdfs.exists(p)){
-            hdfs.delete(p,true);
+        Path p = new Path("hdfs://mycluster/tmp/IBCF");
+        if (hdfs.exists(p)) {
+            hdfs.delete(p, true);
         }
-        p=new Path("hdfs://mycluster/tmp/IBCF_name");
-        if(hdfs.exists(p)){
-            hdfs.delete(p,true);
+        p = new Path("hdfs://mycluster/tmp/IBCF_name");
+        if (hdfs.exists(p)) {
+            hdfs.delete(p, true);
         }
         resultF.saveAsTextFile("/tmp/IBCF");
         n2n.saveAsTextFile("/tmp/IBCF_name");
     }
 
-    public static DataFrame GetCandidateSet(JavaSparkContext ctx, DataFrame useritem,DataFrame item_itemlist,int topk){
+    public static DataFrame GetCandidateSet(JavaSparkContext ctx, DataFrame useritem, DataFrame item_itemlist, int topk) {
         //将useritem转换为user-itemlist
         JavaPairRDD<String, String> useritemlist = useritem.toJavaRDD().mapToPair(new PairFunction<Row, String, String>() {
             @Override
-            public Tuple2<String, String> call(Row row)throws Exception{
-                return new Tuple2<String, String>(row.getAs("user").toString(), row.getAs("sku").toString());
+            public Tuple2<String, String> call(Row row) throws Exception {
+                return new Tuple2<String, String>(row.getAs("user_id").toString(), row.getAs("sku").toString());
             }
         }).reduceByKey(new Function2<String, String, String>() {
             @Override
@@ -107,8 +107,8 @@ public class IBCF_method {
         //得到item-itemlist的map
         Map<String, String> item_itemlistmap = item_itemlist.toJavaRDD().mapToPair(new PairFunction<Row, String, String>() {
             @Override
-            public Tuple2<String, String> call(Row row)throws Exception{
-                return new Tuple2<String, String>(row.getAs("item").toString(),row.getAs("itemlist").toString());
+            public Tuple2<String, String> call(Row row) throws Exception {
+                return new Tuple2<String, String>(row.getAs("item_id").toString(), row.getAs("item_list").toString());
 
             }
         }).collectAsMap();
@@ -117,9 +117,9 @@ public class IBCF_method {
         final Broadcast<Map<String, String>> item_itemlistmap_brd = ctx.broadcast(item_itemlistmap);
         final int top_k = topk;
         //得到候选集
-        JavaPairRDD<String, String> usercandidateitemlist = useritemlist.mapToPair(new PairFunction<Tuple2<String,String>, String, String>() {
+        JavaPairRDD<String, String> usercandidateitemlist = useritemlist.mapToPair(new PairFunction<Tuple2<String, String>, String, String>() {
             @Override
-            public Tuple2<String, String> call(Tuple2<String, String> tuple)throws Exception{
+            public Tuple2<String, String> call(Tuple2<String, String> tuple) throws Exception {
 
                 String user = tuple._1();
                 String[] itemlist = tuple._2().split(",");
@@ -127,7 +127,7 @@ public class IBCF_method {
                 Min_Heap heap = new Min_Heap(top_k);
                 for (String item : itemlist) {
                     //如果在itemlist中没有该item
-                    if(!(item_itemlistmap_brd.getValue().containsKey(item)))
+                    if (!(item_itemlistmap_brd.getValue().containsKey(item)))
                         continue;
                     //我写的是;号隔开
                     String[] candidateitemscores = item_itemlistmap_brd.getValue().get(item).split(";");
@@ -137,12 +137,12 @@ public class IBCF_method {
                         String[] canditem_score = canditemscore.split(":");
                         String canditem = canditem_score[0];
                         Double score = Double.parseDouble(canditem_score[1]);
-                        heap.add(canditem,score);
+                        heap.add(canditem, score);
                     }
                 }
                 //排序
                 heap.sort();
-                if(heap.size == 0){
+                if (heap.size == 0) {
                     return null;
                 }
 
@@ -153,96 +153,81 @@ public class IBCF_method {
                     candidateitemlist += "," + item_entry.key;
                 }
 
-                return new Tuple2<String, String>(user,candidateitemlist);
+                return new Tuple2<String, String>(user, candidateitemlist);
 
             }
-        }).filter(new Function<Tuple2<String,String>, Boolean>() {
+        }).filter(new Function<Tuple2<String, String>, Boolean>() {
             @Override
-            public Boolean call(Tuple2<String,String> tuple)throws Exception{
-                if(tuple == null)
-                    return false;
-                return true;
+            public Boolean call(Tuple2<String, String> tuple) throws Exception {
+                return tuple != null;
             }
         });
 
         System.out.println("usercandiateitemlist: " + usercandidateitemlist.count());
+        System.out.println("usercandidateitemlist");
 
         SQLContext sqlcontext = new SQLContext(ctx.sc());
-        return sqlcontext.createDataFrame(IBCF_method.generateRow(usercandidateitemlist), IBCF_method.gernerateStructType("user:string;itemlist:string"));
+        return sqlcontext.createDataFrame(IBCF_method.generateRow(usercandidateitemlist), IBCF_method.gernerateStructType("user:String;itemlist:String"));
     }
 
-    public static Double[] GetPrecisionAndRecall(DataFrame candidateSet,DataFrame real_useritem){
+    public static Double[] GetPrecisionAndRecall(DataFrame candidateSet, DataFrame real_useritem) {
 
-        //将真实用户行为user-item对转换为user-itemlist的格式，并转换为以user为key的Map
-        Map<String, String> real_useritemlistMap = real_useritem.toJavaRDD().mapToPair(new PairFunction<Row, String, String>() {
+        //将真实用户行为user-item对转换为user-itemlist的格式
+        JavaPairRDD<String, String> real_user_itemlist = real_useritem.toJavaRDD().mapToPair(new PairFunction<Row, String, String>() {
             @Override
-            public Tuple2<String, String> call(Row row)throws Exception{
-                return new Tuple2<String, String>(row.getAs("user").toString(),row.getAs("sku").toString());
+            public Tuple2<String, String> call(Row row) throws Exception {
+                return new Tuple2<String, String>(row.getAs("user_id").toString(), row.getAs("sku").toString());
             }
         }).reduceByKey(new Function2<String, String, String>() {
             @Override
             public String call(String s1, String s2) throws Exception {
                 return s1 + "," + s2;
             }
-        }).collectAsMap();
+        });
 
-        //候选集的user-itemlist的Map
-        Map<String, String> candidatesetMap = candidateSet.toJavaRDD().mapToPair(new PairFunction<Row, String, String>() {
+        //候选集的user-itemlist
+        JavaPairRDD<String, String> candidateset = candidateSet.toJavaRDD().mapToPair(new PairFunction<Row, String, String>() {
             @Override
-            public Tuple2<String, String> call(Row row)throws Exception{
-                return new Tuple2<String, String>(row.getAs("user").toString(),row.getAs("itemlist").toString());
+            public Tuple2<String, String> call(Row row) throws Exception {
+                return new Tuple2<String, String>(row.getAs("user").toString(), row.getAs("itemlist").toString());
             }
-        }).collectAsMap();
+        });
 
-        Double precision = 0.0;
-        Double recall = 0.0;
-        Long candidateitemnum = 0L;
-        Long realitemnum = 0L;
-        Long matchitemnum = 0L;
-        //计算得到候选集和用户真实行为重合的user的行为数
-        for (Map.Entry<String, String> entry : real_useritemlistMap.entrySet()){
-            //感觉只计算有重合的user才比较合理
-            if(candidatesetMap.containsKey(entry.getKey())){
-                //遍历得到每个user的真实itemlist
-                String[] itemlist = entry.getValue().split(",");
-                //计算user对应的所有item数量
-                realitemnum += itemlist.length;
+        double[] jiao_real_rec= real_user_itemlist.join(candidateset).map(new Function<Tuple2<String, Tuple2<String, String>>, double[]>() {
+            @Override
+            public double[] call(Tuple2<String, Tuple2<String, String>> s) throws Exception {
+                Set<String> real_item=new HashSet<String>(Arrays.asList(s._2._1.split(",")));
+                Set<String> rec_item=new HashSet<String>(Arrays.asList(s._2._2.split(",")));
+                double[] result=new double[3];
+                Set<String> tmp=new HashSet<String>(real_item);
+                tmp.retainAll(rec_item);
+                result[0]=tmp.size();
+                result[1]=real_item.size();
+                result[2]=rec_item.size();
+                return result;
             }
-        }
-
-        for (Map.Entry<String, String> entry : candidatesetMap.entrySet()){
-
-            //得到当前user的值
-            String user = entry.getKey();
-            //得到实际该user的itemlist
-            //如果不包括则继续循环，只计算有重合的user的行为，这样感觉比较合理
-            if(!real_useritemlistMap.containsKey(user))
-                continue;
-
-            //遍历得到每个user的候选item
-            String[] itemlist = entry.getValue().split(",");
-            //计算当前user的候选item的个数，并add
-            candidateitemnum += itemlist.length;
-            String[] real_itemlist = real_useritemlistMap.get(user).split(",");
-            //将实际该user的itemlist放入一个List中
-            List<String> realitemList = new ArrayList<String>();
-            for (String realitem : real_itemlist) {
-                realitemList.add(realitem);
+        }).reduce(new Function2<double[], double[], double[]>() {
+            @Override
+            public double[] call(double[] s1, double[] s2) throws Exception {
+                double[] result=new double[3];
+                result[0]=s1[0]+s2[0];
+                result[1]=s1[1]+s2[1];
+                result[2]=s1[2]+s2[2];
+                return result;
             }
-            //遍历该user的候选item，计算在真实itemlist中命中的个数
-            for (String item : itemlist) {
-                if(realitemList.contains(item))
-                    matchitemnum++;
-            }
-        }
+        });
+
+        double matchitemnum = jiao_real_rec[0];
+        double realitemnum = jiao_real_rec[1];
+        double candidateitemnum = jiao_real_rec[2];
+
         System.out.println("matchitemnum: " + matchitemnum);
         System.out.println("candidateitemnum: " + candidateitemnum);
         System.out.println("realitemnum: " + realitemnum);
         //准确率计算，user-item命中数占候选集user-item数量的比例(只计算候选集和用户真实行为中重合的user的行为)
-        precision = matchitemnum*1.0/candidateitemnum;
+        double precision = matchitemnum * 1.0 / candidateitemnum;
         //召回率计算，user-item命中数占用户真实行为user-item数量的比例(只计算候选集和用户真实行为中重合的user的行为)
-        recall = matchitemnum*1.0/realitemnum;
-        Double[] evaluation = new Double[]{precision,recall};
-        return evaluation;
+        double recall = matchitemnum * 1.0 / realitemnum;
+        return new Double[]{precision, recall};
     }
 }
