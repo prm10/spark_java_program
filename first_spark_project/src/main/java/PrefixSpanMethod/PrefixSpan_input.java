@@ -1,4 +1,4 @@
-package PrefixSpan;
+package PrefixSpanMethod;
 
 import java.io.Serializable;
 

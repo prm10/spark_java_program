@@ -27,12 +27,13 @@ public class IBCF_evaluate implements Serializable{
         DataFrame df=IBCF_method.getData(ctx,inputFileName);
         DataFrame lines2=df.filter(df.col("buy_cnt").gt(0))
                 .select(df.col("user_id"), df.col("sku"), df.col("dt"),df.col("item_name"));
-        DataFrame trainSet=lines2.filter(lines2.col("dt").lt("\"20151031\"")).filter(lines2.col("dt").gt("\"20150930\""));
+        DataFrame trainSet=lines2.filter(lines2.col("dt").lt("\"20151101\""));//.filter(lines2.col("dt").gt("\"20150930\""));
         DataFrame testSet=lines2.filter(lines2.col("dt").gt("\"20151031\""));
 
-        DataFrame real_user_item=trainSet.select(trainSet.col("user_id"), trainSet.col("sku"));
+        DataFrame his_user_item=trainSet.select(trainSet.col("user_id"), trainSet.col("sku"));
+        DataFrame real_user_item=testSet.select(testSet.col("user_id"), testSet.col("sku"));
         DataFrame item_itemlist=IBCF_method.getData(ctx,IBCFtableName);//"leyou_db.ibcf_result_id_6to10"
-        DataFrame candidateSet=IBCF_method.GetCandidateSet(ctx, real_user_item, item_itemlist, topk);
+        DataFrame candidateSet=IBCF_method.GetCandidateSet(ctx, his_user_item, item_itemlist, topk);
         Double[] evaluation=IBCF_method.GetPrecisionAndRecall(candidateSet, real_user_item);
         System.out.println("precision: " + evaluation[0] + ";recall: " + evaluation[1]);
     }

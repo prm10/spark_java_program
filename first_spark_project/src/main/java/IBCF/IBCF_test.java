@@ -81,10 +81,10 @@ public class IBCF_test {
 
         //创建输入的DataFrame，<user,item>两个字段
         DataFrame inputDF = sqlcontext.createDataFrame(input, IBCF_input.class);
-        IBCF ibcf = new IBCF()
+        IBCF model = new IBCF()
                 .setMaxBehaviorTimes(maxBehaviorTimes)
                 .setMaxCandidateSize(maxCandidateSize);
-        DataFrame outputDF = ibcf.run(ctx, sqlcontext, inputDF);
+        DataFrame outputDF = model.run(ctx, sqlcontext, inputDF);
         outputDF.show();
 
         JavaPairRDD<String,String> resultF=outputDF.toJavaRDD().mapToPair(new PairFunction<Row, String, String>() {
@@ -97,7 +97,6 @@ public class IBCF_test {
         Map<String,String> sku2name=lines2.toJavaRDD().mapToPair(new PairFunction<Row, String, String>() {
             @Override
             public Tuple2<String, String> call(Row s) throws Exception {
-//                String[] b = s.split(",");
                 return new Tuple2<String, String>(s.getAs("sku").toString(), s.getAs("item_name").toString());
             }
         }).collectAsMap();

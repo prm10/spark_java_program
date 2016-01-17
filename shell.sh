@@ -9,10 +9,19 @@ cd /usr/hdp/2.3.2.0-2950/spark
 leyou_db.joint_feat_tb 1 1000 100
 
 /tmp/shoppingcar.csv
+leyou_db.joint_feat_tb
 
-HashMap<String, String> options = new HashMap<String, String>();
-options.put("header", "true");
-options.put("path", "cars.csv");
+
+scp ~/PrefixSpan-1.0.0-jar-with-dependencies.jar root@hadoopserver3:/home
+ssh root\@hadoopserver3
+cd /usr/hdp/2.3.2.0-2950/spark
+./bin/spark-submit \
+--class "IBCF.IBCF_evaluate" \
+--master yarn --executor-memory 20G \
+--total-executor-cores 48 \
+/home/PrefixSpan-1.0.0-jar-with-dependencies.jar \
+leyou_db.joint_feat_tb leyou_db.ibcf_result_id_6to10 100
+
 
 su hive
 
