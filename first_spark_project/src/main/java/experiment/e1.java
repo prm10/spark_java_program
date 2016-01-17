@@ -26,9 +26,12 @@ public class e1 {
 //        String user_id=s2.get(0);
 //        ArrayList<String> s3=new ArrayList<String>(s2);
 //        s3.remove(0);
-        int x=Integer.valueOf("-1");
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        String ds=df.format(new Date());
+
+//        int x=Integer.valueOf("-1");
+//        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+//        String ds=df.format(new Date());
+
+        List<List<Integer>> ds = Arrays.asList(Arrays.asList(1), Arrays.asList(3, 2), Arrays.asList(1, 2));
         System.out.println(ds);
     }
 }

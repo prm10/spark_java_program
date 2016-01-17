@@ -13,12 +13,13 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import scala.Tuple2;
 
+import java.io.Serializable;
 import java.util.*;
 
 /**
  * Created by prm14 on 2015/12/19.
  */
-public class PrefixSpan_train {
+public class PrefixSpan_train  implements Serializable {
     private double minSupport;
     private int maxPatternLength;
     public DataFrame nameDF;
@@ -67,6 +68,12 @@ public class PrefixSpan_train {
                 return s2;
             }
         });
+//                .filter(new Function<Tuple2<String, Map<String, Set<String>>>, Boolean>() {
+//            @Override
+//            public Boolean call(Tuple2<String, Map<String, Set<String>>> s) throws Exception {
+//                return s._2.size()>1;
+//            }
+//        });
         return tmp1.map(new Function<Tuple2<String, Map<String, Set<String>>>, List<List<String>>>() {
             @Override
             public List<List<String>> call(Tuple2<String, Map<String, Set<String>>> s) throws Exception {
@@ -82,11 +89,18 @@ public class PrefixSpan_train {
 
     public DataFrame run(SQLContext sqlcontext, DataFrame inputDF, final Broadcast<Map<String, String>> s2n) {
         JavaRDD<List<List<String>>> sequences = changeFormat(inputDF);
+        System.out.println(sequences.count()+" sequences list generated");
+        int i=0;
+        for(List<List<String>> s:sequences.collect()){
+            System.out.println(s.toString());
+            i++;
+            if (i > 10) break;
+        }
         PrefixSpan prefixSpan = new PrefixSpan()
-                .setMinSupport(0.5)
-                .setMaxPatternLength(5);
+                .setMinSupport(minSupport)
+                .setMaxPatternLength(maxPatternLength);
         PrefixSpanModel<String> model = prefixSpan.run(sequences);
-        int i = 0;
+        i = 0;
         for (PrefixSpan.FreqSequence<String> freqSeq : model.freqSequences().toJavaRDD().collect()) {
             System.out.println(freqSeq.javaSequence() + ", " + freqSeq.freq());
             i++;
@@ -97,6 +111,11 @@ public class PrefixSpan_train {
             @Override
             public Tuple2<List<List<String>>, Long> call(PrefixSpan.FreqSequence<String> s) throws Exception {
                 return new Tuple2<List<List<String>>, Long>(s.javaSequence(), s.freq());
+            }
+        }).filter(new Function<Tuple2<List<List<String>>, Long>, Boolean>() {
+            @Override
+            public Boolean call(Tuple2<List<List<String>>, Long> s) throws Exception {
+                return !((s._1.size()==1)&(s._1.get(0).size()==1));
             }
         });
 

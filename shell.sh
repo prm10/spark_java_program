@@ -1,3 +1,4 @@
+#生成候选集
 scp ~/PrefixSpan-1.0.0-jar-with-dependencies.jar root@hadoopserver3:/home
 ssh root\@hadoopserver3
 cd /usr/hdp/2.3.2.0-2950/spark
@@ -6,12 +7,9 @@ cd /usr/hdp/2.3.2.0-2950/spark
 --master yarn --executor-memory 20G \
 --total-executor-cores 48 \
 /home/PrefixSpan-1.0.0-jar-with-dependencies.jar \
-leyou_db.joint_feat_tb 1 1000 100
+leyou_db.joint_feat_tb 1 2000 100
 
-/tmp/shoppingcar.csv
-leyou_db.joint_feat_tb
-
-
+#离线测评
 scp ~/PrefixSpan-1.0.0-jar-with-dependencies.jar root@hadoopserver3:/home
 ssh root\@hadoopserver3
 cd /usr/hdp/2.3.2.0-2950/spark
@@ -22,6 +20,20 @@ cd /usr/hdp/2.3.2.0-2950/spark
 /home/PrefixSpan-1.0.0-jar-with-dependencies.jar \
 leyou_db.joint_feat_tb leyou_db.ibcf_result_id_6to10 100
 
+#调用PrefixSpan
+scp ~/PrefixSpan-1.0.0.jar root@hadoopserver3:/home
+ssh root\@hadoopserver3
+cd /usr/hdp/2.3.2.0-2950/spark
+./bin/spark-submit \
+--class "PrefixSpanMethod.PrefixSpan_test" \
+--master yarn --executor-memory 20G \
+--total-executor-cores 48 \
+/home/PrefixSpan-1.0.0.jar \
+leyou_db.joint_feat_tb 1e-2 10
+
+
+/tmp/shoppingcar.csv
+leyou_db.joint_feat_tb
 
 su hive
 
