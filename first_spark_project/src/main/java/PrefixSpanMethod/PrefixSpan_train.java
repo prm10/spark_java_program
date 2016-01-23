@@ -19,7 +19,7 @@ import java.util.*;
 /**
  * Created by prm14 on 2015/12/19.
  */
-public class PrefixSpan_train  implements Serializable {
+public class PrefixSpan_train implements Serializable {
     private double minSupport;
     private int maxPatternLength;
     public DataFrame nameDF;
@@ -67,13 +67,12 @@ public class PrefixSpan_train  implements Serializable {
                 }
                 return s2;
             }
+        }).filter(new Function<Tuple2<String, Map<String, Set<String>>>, Boolean>() {
+            @Override
+            public Boolean call(Tuple2<String, Map<String, Set<String>>> s) throws Exception {
+                return !((s._2.size() == 1) && (s._2.entrySet().iterator().next().getValue().size() == 1));
+            }
         });
-//                .filter(new Function<Tuple2<String, Map<String, Set<String>>>, Boolean>() {
-//            @Override
-//            public Boolean call(Tuple2<String, Map<String, Set<String>>> s) throws Exception {
-//                return s._2.size()>1;
-//            }
-//        });
         return tmp1.map(new Function<Tuple2<String, Map<String, Set<String>>>, List<List<String>>>() {
             @Override
             public List<List<String>> call(Tuple2<String, Map<String, Set<String>>> s) throws Exception {
@@ -89,23 +88,23 @@ public class PrefixSpan_train  implements Serializable {
 
     public DataFrame run(SQLContext sqlcontext, DataFrame inputDF, final Broadcast<Map<String, String>> s2n) {
         JavaRDD<List<List<String>>> sequences = changeFormat(inputDF);
-        System.out.println(sequences.count()+" sequences list generated");
-        int i=0;
-        for(List<List<String>> s:sequences.collect()){
-            System.out.println(s.toString());
-            i++;
-            if (i > 10) break;
-        }
+        System.out.println(sequences.count() + " sequences list generated");
+//        int i=0;
+//        for(List<List<String>> s:sequences.collect()){
+//            System.out.println(s.toString());
+//            i++;
+//            if (i > 10) break;
+//        }
         PrefixSpan prefixSpan = new PrefixSpan()
                 .setMinSupport(minSupport)
                 .setMaxPatternLength(maxPatternLength);
         PrefixSpanModel<String> model = prefixSpan.run(sequences);
-        i = 0;
-        for (PrefixSpan.FreqSequence<String> freqSeq : model.freqSequences().toJavaRDD().collect()) {
-            System.out.println(freqSeq.javaSequence() + ", " + freqSeq.freq());
-            i++;
-            if (i > 10) break;
-        }
+//        i = 0;
+//        for (PrefixSpan.FreqSequence<String> freqSeq : model.freqSequences().toJavaRDD().collect()) {
+//            System.out.println(freqSeq.javaSequence() + ", " + freqSeq.freq());
+//            i++;
+//            if (i > 10) break;
+//        }
 
         JavaPairRDD<List<List<String>>, Long> tmp1 = model.freqSequences().toJavaRDD().mapToPair(new PairFunction<PrefixSpan.FreqSequence<String>, List<List<String>>, Long>() {
             @Override
@@ -115,36 +114,57 @@ public class PrefixSpan_train  implements Serializable {
         }).filter(new Function<Tuple2<List<List<String>>, Long>, Boolean>() {
             @Override
             public Boolean call(Tuple2<List<List<String>>, Long> s) throws Exception {
-                return !((s._1.size()==1)&(s._1.get(0).size()==1));
+                return !((s._1.size() == 1) & (s._1.get(0).size() == 1));
             }
         });
 
         JavaRDD<PrefixSpan_output> result = tmp1.map(new Function<Tuple2<List<List<String>>, Long>, PrefixSpan_output>() {
             @Override
             public PrefixSpan_output call(Tuple2<List<List<String>>, Long> s) throws Exception {
+                long length = 0L;
+                for (List<String> s1 : s._1) {
+                    length+=s1.size();
+                }
                 String pattern = s._1.toString();
                 Long times = s._2;
-                return new PrefixSpan_output().setPattern(pattern).setTimes(times);
+                return new PrefixSpan_output().setPattern(pattern).setTimes(times).setLength(length);
             }
         });
 
         JavaRDD<PrefixSpan_output> resultName = tmp1.map(new Function<Tuple2<List<List<String>>, Long>, PrefixSpan_output>() {
             @Override
             public PrefixSpan_output call(Tuple2<List<List<String>>, Long> s) throws Exception {
-                String pattern = "\r\n";
+                long length = 0L;
+                List<List<String>> pattern = new ArrayList<List<String>>();
                 for (List<String> s1 : s._1) {
-                    String r1 = "[";
+                    List<String> r1 = new ArrayList<String>();
+                    length+=s._1.size();
                     for (String s2 : s1) {
-                        r1 += s2n.getValue().get(s2) + ";";
+                        r1.add(s2n.getValue().get(s2));
                     }
-                    r1 += "]";
-                    pattern += r1 + "\r\n";
+                    pattern.add(r1);
                 }
                 Long times = s._2;
-                return new PrefixSpan_output().setPattern(pattern).setTimes(times);
+                return new PrefixSpan_output().setPattern(pattern.toString()).setTimes(times).setLength(length);
+            }
+        }).filter(new Function<PrefixSpan_output, Boolean>() {
+            @Override
+            public Boolean call(PrefixSpan_output s) throws Exception {
+                return (Long.parseLong(s.getLength()) > 3L) & (Long.parseLong(s.getTimes()) > 5L);
             }
         });
-        nameDF=sqlcontext.createDataFrame(resultName,PrefixSpan_output.class);
-        return sqlcontext.createDataFrame(result, PrefixSpan_output.class);
+
+        int i = 0;
+        System.out.println("pattern_name:");
+        for (PrefixSpan_output s : resultName.collect()) {
+            System.out.println(s.getPattern() + ": " + s.getTimes() + ", " + s.getLength());
+            i++;
+            if (i > 10) break;
+        }
+        nameDF = sqlcontext.createDataFrame(resultName, PrefixSpan_output.class);
+        nameDF.select(nameDF.col("pattern"),nameDF.col("length"),nameDF.col("times"));
+        DataFrame outputDF=sqlcontext.createDataFrame(result, PrefixSpan_output.class);
+        outputDF.select(outputDF.col("pattern"),outputDF.col("length"),outputDF.col("times"));
+        return outputDF;
     }
 }

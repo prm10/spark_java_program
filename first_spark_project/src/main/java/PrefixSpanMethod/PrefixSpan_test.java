@@ -66,22 +66,8 @@ public class PrefixSpan_test {
                 .setMaxPatternLength(maxPatternLength);
         DataFrame outputDF = model.run(sqlcontext, inputDF, s2n);
         outputDF.show();
-        PrefixSpan_method.saveToHive(ctx, outputDF.toJavaRDD(), "pattern:String;times:String", "leyou_db.PrefixSpan_result_id_all");
-        PrefixSpan_method.saveToHive(ctx, model.nameDF.toJavaRDD(), "pattern:String;times:String", "leyou_db.PrefixSpan_result_name_all");
-
-
-//        JavaRDD<List<List<String>>> sequences = ctx.parallelize(Arrays.asList(
-//                Arrays.asList(Arrays.asList("\"1\"", "\"2\""), Arrays.asList("\"3\"")),
-//                Arrays.asList(Arrays.asList("\"1\""), Arrays.asList("\"3\"", "\"2\""), Arrays.asList("\"1\"", "\"2\"")),
-//                Arrays.asList(Arrays.asList("\"1\"", "\"2\""), Arrays.asList("\"5\"")),
-//                Arrays.asList(Arrays.asList("\"6\""))
-//        ), 2);
-//
-//        PrefixSpan_train model = new PrefixSpan_train()
-//                .setMinSupport(minSupport)
-//                .setMaxPatternLength(maxPatternLength);
-//        DataFrame outputDF = model.run1(sqlcontext, inputDF, s2n);
-//        outputDF.show();
+        PrefixSpan_method.saveToHive(ctx, outputDF, "pattern:String;times:String;length:String", "leyou_db.PrefixSpan_result_id_all");
+        PrefixSpan_method.saveToHive(ctx, model.nameDF, "pattern:String;times:String;length:String", "leyou_db.PrefixSpan_result_name_all");
 
     }
 }

@@ -35,6 +35,7 @@ public class IBCF_evaluate implements Serializable{
         DataFrame item_itemlist=IBCF_method.getData(ctx,IBCFtableName);//"leyou_db.ibcf_result_id_6to10"
         DataFrame candidateSet=IBCF_method.GetCandidateSet(ctx, his_user_item, item_itemlist, topk);
         Double[] evaluation=IBCF_method.GetPrecisionAndRecall(candidateSet, real_user_item);
+        IBCF_method.saveToHive(ctx, candidateSet.toJavaRDD(), "user_id:String;itemlist:String", "leyou_db.ibcf_u2i");
         System.out.println("precision: " + evaluation[0] + ";recall: " + evaluation[1]);
     }
 }

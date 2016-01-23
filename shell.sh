@@ -1,23 +1,34 @@
+#生成user-based cf
+scp ~/PrefixSpan-1.0.0.jar root@hadoopserver3:/home
+ssh root\@hadoopserver3
+cd /usr/hdp/2.3.2.0-2950/spark
+./bin/spark-submit \
+--class "IBCF.User_similarity" \
+--master yarn --executor-memory 20G \
+--total-executor-cores 48 \
+/home/PrefixSpan-1.0.0.jar \
+leyou_db.joint_feat_tb 2000 10
+
 #生成候选集
-scp ~/PrefixSpan-1.0.0-jar-with-dependencies.jar root@hadoopserver3:/home
+scp ~/PrefixSpan-1.0.0.jar root@hadoopserver3:/home
 ssh root\@hadoopserver3
 cd /usr/hdp/2.3.2.0-2950/spark
 ./bin/spark-submit \
 --class "IBCF.IBCF_test" \
 --master yarn --executor-memory 20G \
 --total-executor-cores 48 \
-/home/PrefixSpan-1.0.0-jar-with-dependencies.jar \
+/home/PrefixSpan-1.0.0.jar \
 leyou_db.joint_feat_tb 1 2000 100
 
 #离线测评
-scp ~/PrefixSpan-1.0.0-jar-with-dependencies.jar root@hadoopserver3:/home
+scp ~/PrefixSpan-1.0.0.jar root@hadoopserver3:/home
 ssh root\@hadoopserver3
 cd /usr/hdp/2.3.2.0-2950/spark
 ./bin/spark-submit \
 --class "IBCF.IBCF_evaluate" \
 --master yarn --executor-memory 20G \
 --total-executor-cores 48 \
-/home/PrefixSpan-1.0.0-jar-with-dependencies.jar \
+/home/PrefixSpan-1.0.0.jar \
 leyou_db.joint_feat_tb leyou_db.ibcf_result_id_6to10 100
 
 #调用PrefixSpan
@@ -29,7 +40,7 @@ cd /usr/hdp/2.3.2.0-2950/spark
 --master yarn --executor-memory 20G \
 --total-executor-cores 48 \
 /home/PrefixSpan-1.0.0.jar \
-leyou_db.joint_feat_tb 1e-2 10
+leyou_db.joint_feat_tb 1e-4 10
 
 
 /tmp/shoppingcar.csv
@@ -57,50 +68,16 @@ http://yarn.tunnel.yottabig.com:8000/cluster
 
 yarn application -kill application_1447840502449_0012
 
-
-
+sql
+----------------------------------------------------------------------------------------------------------------------
 select * from tmalldb.prm14_result limit 10;
 
+select * from leyou_db.PrefixSpan_result_name_all limit 100;
+select pattern from leyou_db.PrefixSpan_result_name_all limit 10;
+----------------------------------------------------------------------------------------------------------------------
+一、
 
+二、
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-庞人铭一：
-输出结果一直无法成功写入Hive，故退而求其次研究生成DataFrame结构的输入输出。
-找到了官网关于DataFrame的Document：https://spark.apache.org/docs/latest/sql-programming-guide.html#dataframes
-发现按照官网示例"Inferring the Schema Using Reflection"用JavaBean生成DataFrame并不能成功，依据是inputDF.printSchema()发现只输出root，而没有如官网所示按JavaBean生成相应的结构。
-庞人铭二：
-在生成DataFrame的结果集的过程中发现，输出结果一直无法成功写入Hive不是连接hive阶段出错，而是生成的DataFrame有问题。
-继续研究和尝试基于Java生成指定类型结构的DataFrame。
-根据张媛要求，生成了协同过滤算法结果的截图和说明。
-尝试将中间结果repartition成200个分区，发现对程序运行时间没有明显的影响。
-庞人铭三：
-根据官网生成DataFrame的另一个方案"Programmatically Specifying the Schema"成功生成指定类型结构的DataFrame，并将结果数据写入了Hive。
-重构优化协同过滤算法的代码，将输入输出接口封装成函数。
-
-
-public static class outfile_result implements Serializable {
-	public Long item_id;
-	public String item_list;
-
-	outfile_result(Long i1,String list) {
-		item_id=i1;
-		item_list=list;
-	}
-}
+三、
+生成了PrefixSpan算法的结果表leyou_db.PrefixSpan_result_name_all，其中

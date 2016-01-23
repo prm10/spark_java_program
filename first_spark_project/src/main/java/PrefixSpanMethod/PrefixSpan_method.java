@@ -46,11 +46,11 @@ public class PrefixSpan_method {
         });
     }
 
-    public static void saveToHive(JavaSparkContext ctx, JavaRDD<Row> outfile, String structType, String tableName) {
+    public static void saveToHive(JavaSparkContext ctx, DataFrame result_df, String structType, String tableName) {
         HiveContext hiveCtx = new HiveContext(ctx.sc());
-        DataFrame result_df = hiveCtx.createDataFrame(outfile, gernerateStructType(structType));
-        result_df.printSchema();
-        result_df.registerTempTable("temp_table1");
+//        DataFrame result_df = hiveCtx.createDataFrame(outfile, gernerateStructType(structType));
+//        result_df.printSchema();
+        hiveCtx.registerDataFrameAsTable(result_df,"temp_table1");
         hiveCtx.sql("drop table if exists " + tableName);
         hiveCtx.sql("create external table if not exists " + tableName + " as select * from temp_table1");
     }
