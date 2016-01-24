@@ -29,6 +29,10 @@ public class IBCF implements Serializable {
     private int maxBehaviorTimes=200;
     private int maxCandidateSize=100;
 
+    private double getWeight(Long score){
+//        return 1/ Math.log(1 + score);
+        return score;
+    }
     public IBCF setMaxBehaviorTimes(int s) {
         maxBehaviorTimes = s;
         return this;
@@ -37,6 +41,7 @@ public class IBCF implements Serializable {
         maxCandidateSize = s;
         return this;
     }
+
     public DataFrame run(JavaSparkContext ctx,SQLContext sqlcontext,DataFrame inputDF) {
         JavaPairRDD<String, String> user_behavior = inputDF.toJavaRDD().mapToPair(new PairFunction<Row, String, String>() {
             @Override
@@ -99,7 +104,7 @@ public class IBCF implements Serializable {
         JavaPairRDD<String, Double> item_times = ui_times.mapToPair(new PairFunction<Tuple2<Tuple2<String, String>, Long>, String, Double>() {
             @Override
             public Tuple2<String, Double> call(Tuple2<Tuple2<String, String>, Long> s) throws Exception {
-                return new Tuple2<String, Double>(s._1._2, (s._2() * s._2()) / Math.log(1 + utbc.getValue().get(s._1._1)));//item,count;
+                return new Tuple2<String, Double>(s._1._2, (s._2() * s._2()) * getWeight(utbc.getValue().get(s._1._1)));//item,count;
             }
         }).reduceByKey(new Function2<Double, Double, Double>() {
             @Override
@@ -121,7 +126,7 @@ public class IBCF implements Serializable {
                     Tuple2<String, Long> item1 = items.get(i1);
                     for (int i2 = i1 + 1; i2 < items.size(); i2++) {
                         Tuple2<String, Long> item2 = items.get(i2);
-                        double score = item1._2 * item2._2 / Math.log(1 + utbc.getValue().get(user_id));
+                        double score = item1._2 * item2._2 *getWeight(utbc.getValue().get(user_id));
                         output.add(new Tuple2<Tuple2<String, String>, Double>(new Tuple2<String, String>(item1._1, item2._1), score));
                         output.add(new Tuple2<Tuple2<String, String>, Double>(new Tuple2<String, String>(item2._1, item1._1), score));
                     }

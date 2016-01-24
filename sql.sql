@@ -88,6 +88,14 @@ from buy_info
 group by user_id
 ;
 
+drop table if exists user_count_6to10;
+create table user_count_6to10 as 
+select user_id,count(*) as num
+from buy_info
+where dt<'"20151101"'
+group by user_id
+;
+
 drop table if exists item_name;
 create table item_name as 
 select distinct sku as item_id,item_name
@@ -98,18 +106,26 @@ drop table if exists check_user;
 create table check_user as 
 select B.*,A.num
 from
-(select * from user_count where num >5 and num <10
+(select * from user_count_6to10 where num >10
 ) A
 join
 (select * from leyou_db.ubcf_6to10
 ) B
-on A.user_id=B.user_id
+join
+(select distinct user_id from buy_info
+where dt>='"20151101"'
+) C
+join
+(select distinct user_id from buy_info
+where dt<'"20151101"'
+) D
+on A.user_id=B.user_id and B.user_id=C.user_id and D.user_id=C.user_id
 ;
 
---选择user："8c93be24a8bb3fd0b284aa362f71e464" 及其相似userlist："43331a9efdd466572c4ef1a6b635ff2b":0.49593;"4474fd54fac38de3f8ff080c1cd833d4":0.45080;"efc6347f82b9ec6ef1cb29c9a18230f2":0.34795;"822b49a35b00c3170dfe58351ef33e0c":0.32808;"1e760b2ca309cbb1e160da1a28509c19":0.27074;"0f3196c6565b52403ad0d7bc77a569fd":0.24712;"9352368523b2770c7f9abd7ad4624817":0.24020;"0cdbb1297235096315f91a013066f5b1":0.23320;"98b68983f7b3502ef6f0252d52474dfc":0.23047;"ac34fd6649124a7e6db9991b2e21830e":0.1953
+--选择user："6a06697c2f0e596d61290245fe4d6560"      "86c6a6894bed1dfb9d1678674bce72d2":1.00000;"006c9430e023d6a6b23c7729d9023ae2":0.96263;"e324e1216112c6b6530f7dc751be1456":0.78974;"68e73c35ef47738730ad31c84f866388":0.78698;"e3ba265bf28e816704b67882e47186b0":0.53272;"b75831dee7f88058a1d2865951891681":0.45531;"b862c21e364d6c6c533bb302f5cc0ee1":0.42366;"455e833603097752fe5dbb6000f491ba":0.31527;"3eb98385c95f9bdeb81936d2ea34066d":0.15192        21
 
-select user_id,item_name,dt from buy_info
-where user_id='"8c93be24a8bb3fd0b284aa362f71e464"'
+select dt,item_name from buy_info
+where user_id='"6a06697c2f0e596d61290245fe4d6560"'
 order by dt;
 
 
