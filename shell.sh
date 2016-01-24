@@ -40,7 +40,7 @@ cd /usr/hdp/2.3.2.0-2950/spark
 --master yarn --executor-memory 20G \
 --total-executor-cores 48 \
 /home/PrefixSpan-1.0.0.jar \
-leyou_db.joint_feat_tb 1e-4 10
+leyou_db.joint_feat_tb 1e-4 100
 
 
 /tmp/shoppingcar.csv
@@ -72,12 +72,12 @@ sql
 ----------------------------------------------------------------------------------------------------------------------
 select * from tmalldb.prm14_result limit 10;
 
-select * from leyou_db.PrefixSpan_result_name_all limit 100;
+select * from leyou_db.PrefixSpan_result_name_all where times>10 and length>6 limit 100;
 select pattern from leyou_db.PrefixSpan_result_name_all limit 10;
 ----------------------------------------------------------------------------------------------------------------------
 一、
 生成user-based CF的结果，储存于leyou_db.ubcf_6to10中。
-通过user找相似user（user-based CF），发现user行为太稀疏了，每个user一般只对4个以内的item有行为。即使是通过行为次数很多的user找相似user，对应的相似的user的行为次数也只有3~4个，所以没有看出特别的规律
+通过user找相似user（user-based CF），发现user行为太稀疏了，每个user一般只对4个以内的item有行为。即使是通过行为次数很多的user找相似user，对应的相似的user的行为次数也只有3~4个，所以没有看出特别有价值的规律
 二、
 
 三、
