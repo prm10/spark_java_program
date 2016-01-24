@@ -30,7 +30,7 @@ public class User_similarity {
         SQLContext sqlcontext = new SQLContext(ctx.sc());
 
         DataFrame df = IBCF_method.getData(ctx, inputFileName);
-        DataFrame lines2 = df.filter(df.col("buy_cnt").gt(0))
+        DataFrame lines2 = df.filter(df.col("brew_cnt").gt(0))
                 .select(df.col("user_id"), df.col("sku"), df.col("dt"), df.col("item_name"));
         DataFrame trainSet = lines2.filter(lines2.col("dt").lt("\"20151101\""));
         DataFrame testSet = lines2.filter(lines2.col("dt").gt("\"20151031\""));

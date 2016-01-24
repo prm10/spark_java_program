@@ -31,7 +31,7 @@ public class IBCF implements Serializable {
 
     private double getWeight(Long score){
 //        return 1/ Math.log(1 + score);
-        return score;
+        return 1.0;
     }
     public IBCF setMaxBehaviorTimes(int s) {
         maxBehaviorTimes = s;
